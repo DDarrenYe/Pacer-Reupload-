@@ -97,6 +97,10 @@ def parse_csv(content: str | bytes) -> pd.DataFrame:
 def summarize_laps(df: pd.DataFrame) -> RunSummary:
     distance = float(df["cum_dist_m"].iloc[-1])
     duration = float(df["elapsed_s"].iloc[-1])
+    hr = df.dropna(subset=["avg_hr"])
+    avg_hr = None
+    if not hr.empty:  # weight each lap's heart rate by how long it lasted
+        avg_hr = round(float((hr["avg_hr"] * hr["duration_s"]).sum() / hr["duration_s"].sum()), 1)
     return RunSummary(
         source="csv",
         start_time=None,
@@ -105,6 +109,7 @@ def summarize_laps(df: pd.DataFrame) -> RunSummary:
         moving_time_s=duration,
         avg_pace_s_per_km=round(duration / (distance / 1000), 1),
         elevation_gain_m=None,
+        avg_hr=avg_hr,
         point_count=len(df),
     )
 
