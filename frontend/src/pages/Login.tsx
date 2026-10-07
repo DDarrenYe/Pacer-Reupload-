@@ -34,7 +34,7 @@ export default function Login() {
 
   return (
     <main className="narrow">
-      <h1>Run Analytics</h1>
+      <h1>Pacer</h1>
       <p className="muted">Upload your runs and see splits, pace drift and best efforts.</p>
       <form className="card stack" onSubmit={submit}>
         <h2>{mode === "signin" ? "Sign in" : "Create an account"}</h2>

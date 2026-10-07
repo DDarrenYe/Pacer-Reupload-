@@ -1,6 +1,6 @@
-# Run Analytics
+# Pacer
 
-Upload a GPX or CSV run and get pace splits, fatigue trends and a predicted race time. It handles outdoor GPS runs and treadmill sessions with no GPS.
+Pacer is a running analytics app. Upload a GPX or CSV run and get pace splits, fatigue trends and a predicted race time. It handles outdoor GPS runs and treadmill sessions with no GPS.
 
 - **Live app:** https://training-analytics-tool.vercel.app
 - **Live API:** https://run-analytics-api.onrender.com ([interactive docs](https://run-analytics-api.onrender.com/docs), [health check](https://run-analytics-api.onrender.com/health))

@@ -14,7 +14,7 @@ function Nav() {
   if (!session) return null;
   return (
     <nav className="nav">
-      <Link to="/" className="brand">Run Analytics</Link>
+      <Link to="/" className="brand">Pacer</Link>
       <span className="muted nav-email">{session.user.email}</span>
       <button className="link" onClick={() => supabase.auth.signOut()}>Sign out</button>
     </nav>

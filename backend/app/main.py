@@ -11,7 +11,7 @@ from app.storage import StorageError
 logger = logging.getLogger(__name__)
 
 app = FastAPI(
-    title="Run Analytics API",
+    title="Pacer API",
     description="Upload GPX or CSV runs and get splits, fatigue trends and race predictions.",
     version="0.4.0",
 )

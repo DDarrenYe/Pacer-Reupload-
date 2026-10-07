@@ -1,5 +1,6 @@
 services:
   - type: web
+    # Kept as run-analytics-api: renaming it would create a new service with a new URL.
     name: run-analytics-api
     runtime: python
     plan: free
