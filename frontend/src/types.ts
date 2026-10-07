@@ -7,7 +7,7 @@ export interface Run {
   id: string;
   name: string | null;
   started_at: string;
-  source: "gpx" | "csv";
+  source: "gpx" | "csv" | "manual";
   surface: Surface;
   distance_m: number;
   elapsed_s: number;

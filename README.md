@@ -15,6 +15,8 @@ Pacer is a running analytics app. Upload a GPX or CSV run and get pace splits, f
 | POST | `/runs` | ✔ | Upload a file and save it as a run, with its analytics (409 if you've uploaded it before) |
 | GET | `/runs` | ✔ | Your runs, newest first |
 | GET | `/runs/{id}` | ✔ | One of your runs, with splits and best efforts |
+| POST | `/runs/manual` | ✔ | Enter a run by hand (distance, time, date); pace is calculated |
+| POST | `/runs/reprocess-all` | ✔ | Recalculate all your uploaded runs |
 | POST | `/runs/{id}/reprocess` | ✔ | Redo parsing and analytics from the stored original file |
 | DELETE | `/runs/{id}` | ✔ | Delete a run and its stored file |
 | GET | `/training-load?days=56` | ✔ | Daily load, 7-day acute, 28-day chronic and ACWR |
@@ -84,6 +86,8 @@ CI runs lint, applies the migrations to a real Postgres 16, checks they match th
 | Heart rate | Read from Garmin-style GPX extensions (Strava and Garmin exports) or a CSV `avg_hr` column, and time-weighted. |
 
 ## Supported files
+
+- **Manual entry:** no file needed. Enter distance, time and date (useful for treadmill runs without a watch). Pace is distance ÷ time, and an implausible pace (faster than 1:30/km or slower than 30:00/km) is rejected as a likely typo. Manual runs count towards weekly distance, trends and training load, and a manual race counts for prediction. They have no splits or best efforts.
 
 - **GPX:** activity exports from a watch or app (the file needs timestamps). Paused points (speed under 0.5 m/s, or a gap of more than 60 s) count toward elapsed time but not moving time. GPS spikes that imply a speed over 12 m/s are dropped. GPS wobble is filtered (distance counts in steps of 5 m or more) and climb uses a 1 m threshold; on a real 15 km run this matches Strava to within 0.1%.
 - **CSV:** one row per lap or interval of a single run. It needs a distance column (`distance_m`, `distance_km`, `miles`, or `distance`, which is read as km when every value is 50 or less) and a time column (`time`, `duration`, and so on, in seconds or `mm:ss` / `hh:mm:ss`). An `avg_hr` column is optional. CSVs have no date, so pass `started_at` when you upload. See `backend/tests/data/treadmill.csv`.

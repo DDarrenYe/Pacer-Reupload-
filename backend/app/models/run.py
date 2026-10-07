@@ -25,8 +25,9 @@ class Run(Base):
     elevation_gain_m: Mapped[float | None] = mapped_column(Float)
     avg_hr: Mapped[float | None] = mapped_column(Float)
     is_race: Mapped[bool] = mapped_column(default=False)
-    raw_file_key: Mapped[str] = mapped_column(String(300))
-    file_hash: Mapped[str] = mapped_column(String(64))
+    # Both empty for manual entries, which have no file.
+    raw_file_key: Mapped[str | None] = mapped_column(String(300))
+    file_hash: Mapped[str | None] = mapped_column(String(64))
     notes: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(UTC)

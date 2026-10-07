@@ -9,7 +9,7 @@ import type {
   Week,
 } from "./types";
 
-const API_URL = import.meta.env.VITE_API_URL.replace(/\/$/, "");
+const API_URL = (import.meta.env.VITE_API_URL ?? "").replace(/\/$/, "");
 
 export class ApiError extends Error {
   constructor(
@@ -19,6 +19,17 @@ export class ApiError extends Error {
   ) {
     super(message);
   }
+}
+
+/** FastAPI errors come as a string, {message}, or a list of validation errors. */
+export function errorMessage(detail: unknown): string | null {
+  if (typeof detail === "string") return detail;
+  if (Array.isArray(detail) && detail.length > 0) {
+    const msg = (detail[0] as { msg?: string }).msg;
+    return msg ? msg.replace(/^Value error, /, "") : null;
+  }
+  if (detail && typeof detail === "object" && "message" in detail) return String(detail.message);
+  return null;
 }
 
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
@@ -33,8 +44,7 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   const body = await res.json().catch(() => null);
   if (!res.ok) {
     const detail = body?.detail;
-    const message =
-      typeof detail === "string" ? detail : (detail?.message ?? `Request failed (${res.status})`);
+    const message = errorMessage(detail) ?? `Request failed (${res.status})`;
     throw new ApiError(res.status, message, detail);
   }
   return body as T;
@@ -51,6 +61,20 @@ export const api = {
   reprocessAll: () =>
     request<{ reprocessed: number; failed: number }>("/runs/reprocess-all", { method: "POST" }),
   deleteRun: (id: string) => request<void>(`/runs/${id}`, { method: "DELETE" }),
+  createManualRun: (input: {
+    distance_km: number;
+    duration_s: number;
+    started_at: string;
+    surface: Surface;
+    name?: string;
+    is_race: boolean;
+    avg_hr?: number;
+  }) =>
+    request<RunDetail>("/runs/manual", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    }),
   uploadRun: (input: {
     file: File;
     surface?: Surface;

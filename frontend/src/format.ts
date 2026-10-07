@@ -48,3 +48,15 @@ export function describeExponent(b: number | null): string {
 export function formatShortDate(isoDate: string): string {
   return new Date(`${isoDate}T00:00:00`).toLocaleDateString(undefined, { day: "numeric", month: "short" });
 }
+
+/** Hours, minutes and seconds from form fields -> total seconds (blank counts as 0). */
+export function toSeconds(h: string, m: string, s: string): number {
+  const n = (v: string) => (v.trim() === "" ? 0 : Number(v));
+  return n(h) * 3600 + n(m) * 60 + n(s);
+}
+
+/** Pace in s/km, or null when it can't be worked out yet. */
+export function paceFrom(distanceKm: number, seconds: number): number | null {
+  if (!(distanceKm > 0) || !(seconds > 0) || !Number.isFinite(distanceKm) || !Number.isFinite(seconds)) return null;
+  return seconds / distanceKm;
+}

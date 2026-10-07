@@ -1,6 +1,14 @@
 import { describe, expect, it } from "vitest";
 
-import { describeDrift, describeExponent, formatDistance, formatDuration, formatPace } from "./format";
+import {
+  describeDrift,
+  describeExponent,
+  formatDistance,
+  formatDuration,
+  formatPace,
+  paceFrom,
+  toSeconds,
+} from "./format";
 
 describe("formatDuration", () => {
   it.each([
@@ -34,4 +42,15 @@ describe("describeExponent", () => {
   it("calls 1.06 average", () => expect(describeExponent(1.065)).toMatch(/about as much/));
   it("explains a high exponent", () => expect(describeExponent(1.1)).toMatch(/speed is your relative strength/));
   it("explains a low exponent", () => expect(describeExponent(1.02)).toMatch(/endurance/));
+});
+
+describe("manual entry helpers", () => {
+  it("adds up h:m:s", () => expect(toSeconds("1", "02", "05")).toBe(3725));
+  it("treats blanks as zero", () => expect(toSeconds("", "27", "")).toBe(1620));
+  it("works out pace", () => expect(paceFrom(5, 1650)).toBe(330));
+  it("waits for both values", () => {
+    expect(paceFrom(0, 1650)).toBeNull();
+    expect(paceFrom(5, 0)).toBeNull();
+    expect(paceFrom(Number.NaN, 100)).toBeNull();
+  });
 });

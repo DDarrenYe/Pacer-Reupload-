@@ -46,8 +46,7 @@ export default function UploadForm({ onUploaded }: { onUploaded: () => void }) {
   }
 
   return (
-    <form className="card stack" onSubmit={submit}>
-      <h2>Upload a run</h2>
+    <form className="stack" onSubmit={submit}>
       <label>
         GPX or CSV file
         <input type="file" accept=".gpx,.csv" required onChange={(e) => setFile(e.target.files?.[0] ?? null)} />

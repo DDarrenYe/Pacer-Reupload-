@@ -2,7 +2,7 @@ import uuid
 from datetime import date, datetime
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class RunSummary(BaseModel):
@@ -23,7 +23,7 @@ class RunOut(BaseModel):
     id: uuid.UUID
     name: str | None
     started_at: datetime
-    source: Literal["gpx", "csv"]
+    source: Literal["gpx", "csv", "manual"]
     surface: Literal["road", "track", "treadmill"]
     distance_m: float
     elapsed_s: float
@@ -136,3 +136,30 @@ class WeekOut(BaseModel):
     distance_km: float
     avg_pace_s_per_km: float | None
     predicted_5k_s: float | None
+
+
+# Typos like 50 km in 20 minutes are caught by these pace limits (per km).
+FASTEST_PACE_S = 90  # 1:30 /km, faster than the 1500 m world record
+SLOWEST_PACE_S = 30 * 60  # 30:00 /km, a slow walk
+
+
+class ManualRunIn(BaseModel):
+    """A run entered by hand, e.g. on a treadmill without a watch."""
+
+    distance_km: float = Field(gt=0, le=500)
+    duration_s: float = Field(gt=0, le=48 * 3600)
+    started_at: datetime
+    surface: Literal["road", "track", "treadmill"] = "treadmill"
+    name: str | None = Field(default=None, max_length=200)
+    is_race: bool = False
+    avg_hr: float | None = Field(default=None, ge=30, le=250)
+    notes: str | None = None
+
+    @model_validator(mode="after")
+    def _plausible_pace(self) -> "ManualRunIn":
+        pace = self.duration_s / self.distance_km
+        if not FASTEST_PACE_S <= pace <= SLOWEST_PACE_S:
+            raise ValueError(
+                "That works out to an unrealistic pace. Check the distance (km) and time."
+            )
+        return self

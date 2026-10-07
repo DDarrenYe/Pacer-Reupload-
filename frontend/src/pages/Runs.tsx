@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
 import { api } from "../api";
+import ManualRunForm from "../components/ManualRunForm";
 import UploadForm from "../components/UploadForm";
 import { formatDate, formatDistance, formatDuration, formatPace } from "../format";
 import type { Run } from "../types";
@@ -9,6 +10,7 @@ import { useSlowNotice } from "../useSlowNotice";
 
 export default function Runs() {
   const [runs, setRuns] = useState<Run[] | null>(null);
+  const [mode, setMode] = useState<"file" | "manual">("file");
   const [error, setError] = useState<string | null>(null);
   const [recalc, setRecalc] = useState<{ busy: boolean; message: string | null }>({ busy: false, message: null });
   const slow = useSlowNotice(runs === null && !error);
@@ -33,7 +35,17 @@ export default function Runs() {
 
   return (
     <main>
-      <UploadForm onUploaded={load} />
+      <section className="card stack">
+        <div className="tabs" role="tablist" aria-label="Add a run">
+          <button role="tab" aria-selected={mode === "file"} className={mode === "file" ? "tab active" : "tab"} onClick={() => setMode("file")}>
+            Upload a file
+          </button>
+          <button role="tab" aria-selected={mode === "manual"} className={mode === "manual" ? "tab active" : "tab"} onClick={() => setMode("manual")}>
+            Enter manually
+          </button>
+        </div>
+        {mode === "file" ? <UploadForm onUploaded={load} /> : <ManualRunForm onSaved={load} />}
+      </section>
       <section className="card">
         <h2>Your runs</h2>
         {error && <p className="error">{error}</p>}

@@ -43,7 +43,7 @@ export default function RunDetail() {
   }
 
   async function remove() {
-    if (!confirm("Delete this run and its uploaded file? This can't be undone.")) return;
+    if (!confirm("Delete this run? This can't be undone.")) return;
     setBusy(true);
     try {
       await api.deleteRun(id);
@@ -67,19 +67,28 @@ export default function RunDetail() {
         <h1>{run.name ?? "Untitled run"}</h1>
         <p className="muted">
           {formatDate(run.started_at)} · {run.surface}
+          {run.source === "manual" && " · entered manually"}
           {run.is_race && " · race"}
         </p>
       </header>
 
       <section className="tiles" aria-label="Summary">
         <Tile label="Distance" value={formatDistance(run.distance_m)} />
-        <Tile label="Moving time" value={formatDuration(run.moving_time_s)} />
+        <Tile label={run.source === "manual" ? "Time" : "Moving time"} value={formatDuration(run.moving_time_s)} />
         <Tile label="Average pace" value={formatPace(run.avg_pace_s_per_km)} />
         <Tile label="Average heart rate" value={run.avg_hr ? `${Math.round(run.avg_hr)} bpm` : "–"} />
         <Tile label="Elevation gain" value={run.elevation_gain_m !== null ? `${Math.round(run.elevation_gain_m)} m` : "–"} />
       </section>
 
-      {run.splits.length === 0 ? (
+      {run.source === "manual" ? (
+        <section className="card">
+          <p className="muted" style={{ margin: 0 }}>
+            Entered manually, so there are no splits or best efforts: with only a total distance and time, a per-km
+            breakdown would be made up. It still counts towards your weekly distance and training load
+            {run.is_race ? ", and as a race for predictions" : ""}.
+          </p>
+        </section>
+      ) : run.splits.length === 0 ? (
         <section className="card">
           <p>This run was uploaded before analytics existed.</p>
           <button onClick={reprocess} disabled={busy}>{busy ? "Working…" : "Calculate splits now"}</button>
@@ -158,7 +167,7 @@ export default function RunDetail() {
       )}
 
       <section className="actions">
-        <button className="secondary" onClick={reprocess} disabled={busy}>Recalculate</button>
+        {run.source !== "manual" && <button className="secondary" onClick={reprocess} disabled={busy}>Recalculate</button>}
         <button className="danger" onClick={remove} disabled={busy}>Delete run</button>
       </section>
     </main>

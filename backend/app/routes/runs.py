@@ -16,7 +16,7 @@ from app.auth import CurrentUserId
 from app.db import DbSession
 from app.models import BestEffort, Run, Split
 from app.routes.files import CONTENT_TYPES, parse_file, read_upload
-from app.schemas.run import RunDetail, RunOut, RunSummary
+from app.schemas.run import ManualRunIn, RunDetail, RunOut, RunSummary
 from app.storage import Storage, StorageDep, StorageError
 
 router = APIRouter(prefix="/runs", tags=["runs"])
@@ -81,10 +81,44 @@ def create_run(
     return run
 
 
+@router.post("/manual", response_model=RunDetail, status_code=201)
+def create_manual_run(body: ManualRunIn, user_id: CurrentUserId, db: DbSession) -> Run:
+    """Enter a run by hand (distance and time); pace is calculated from them.
+
+    Manual runs count towards weekly distance, trends and training load, and a manual
+    race counts for race prediction. They get no splits or best efforts: with only a
+    total distance and time, any per-km breakdown would be made up.
+    """
+    distance_m = body.distance_km * 1000
+    run = Run(
+        user_id=user_id,
+        name=body.name or f"{body.distance_km:g} km {body.surface} run",
+        started_at=body.started_at,
+        source="manual",
+        surface=body.surface,
+        distance_m=round(distance_m, 1),
+        elapsed_s=body.duration_s,
+        moving_time_s=body.duration_s,
+        avg_pace_s_per_km=round(body.duration_s / body.distance_km, 1),
+        elevation_gain_m=None,
+        avg_hr=body.avg_hr,
+        is_race=body.is_race,
+        notes=body.notes,
+        raw_file_key=None,
+        file_hash=None,
+    )
+    db.add(run)
+    db.commit()
+    return run
+
+
 @router.post("/reprocess-all")
 def reprocess_all_runs(user_id: CurrentUserId, db: DbSession, storage: StorageDep) -> dict:
     """Recalculate every one of your runs from its stored file (after a parser fix)."""
-    runs = db.scalars(select(Run).where(Run.user_id == user_id)).all()
+    # Manual entries have no file and nothing to recalculate.
+    runs = db.scalars(
+        select(Run).where(Run.user_id == user_id, Run.raw_file_key.is_not(None))
+    ).all()
     done = failed = 0
     for run in runs:
         try:
@@ -127,6 +161,8 @@ def reprocess_run(
     Use this for runs uploaded before an analytics change, or after changing the surface.
     """
     run = _get_own_run(db, run_id, user_id)
+    if run.raw_file_key is None:
+        raise HTTPException(409, "Manual runs have no file to recalculate from.")
     _reprocess(run, storage)
     db.commit()
     return run
@@ -148,7 +184,8 @@ def delete_run(
 ) -> Response:
     """Delete a run and its uploaded file."""
     run = _get_own_run(db, run_id, user_id)
-    storage.delete(run.raw_file_key)
+    if run.raw_file_key:
+        storage.delete(run.raw_file_key)
     db.delete(run)
     db.commit()
     return Response(status_code=204)

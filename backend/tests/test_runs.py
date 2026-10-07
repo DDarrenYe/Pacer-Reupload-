@@ -302,3 +302,72 @@ def test_reprocess_all_counts_missing_files(client, data_dir, storage):
         "reprocessed": 0,
         "failed": 1,
     }
+
+
+def _manual(client, user=ALICE, **overrides):
+    body = {"distance_km": 5, "duration_s": 1650, "started_at": "2026-10-06T18:00:00Z"}
+    return client.post("/runs/manual", json={**body, **overrides}, headers=auth(user))
+
+
+def test_manual_run_calculates_pace(client):
+    r = _manual(client, avg_hr=150)
+    assert r.status_code == 201, r.text
+    run = r.json()
+    assert run["source"] == "manual"
+    assert run["surface"] == "treadmill"
+    assert run["distance_m"] == 5000
+    assert run["moving_time_s"] == run["elapsed_s"] == 1650
+    assert run["avg_pace_s_per_km"] == 330  # 27:30 over 5 km = 5:30 /km
+    assert run["avg_hr"] == 150
+    assert run["name"] == "5 km treadmill run"
+    # No made-up splits or efforts from a single total
+    assert run["splits"] == [] and run["best_efforts"] == []
+    assert run["split_type"] is None
+
+
+@pytest.mark.parametrize(
+    "overrides",
+    [
+        {"distance_km": 0},
+        {"duration_s": -5},
+        {"distance_km": 50, "duration_s": 1200},  # 50 km in 20 min
+        {"distance_km": 1, "duration_s": 3 * 3600},  # 3 h for 1 km
+        {"surface": "moon"},
+        {"avg_hr": 400},
+    ],
+)
+def test_manual_run_validation(client, overrides):
+    assert _manual(client, **overrides).status_code == 422
+
+
+def test_manual_runs_appear_in_list_and_load_and_can_be_deleted(client, storage):
+    from datetime import UTC, datetime
+
+    today = datetime.now(UTC).replace(hour=6).isoformat()
+    run_id = _manual(client, started_at=today).json()["id"]
+    assert [r["id"] for r in client.get("/runs", headers=auth(ALICE)).json()] == [run_id]
+    assert client.get("/training-load?days=7", headers=auth(ALICE)).json()[-1]["load_min"] == 27.5
+    assert client.get(f"/runs/{run_id}", headers=auth(BOB)).status_code == 404
+
+    assert client.post(f"/runs/{run_id}/reprocess", headers=auth(ALICE)).status_code == 409
+    assert client.post("/runs/reprocess-all", headers=auth(ALICE)).json() == {
+        "reprocessed": 0,
+        "failed": 0,
+    }
+    assert client.delete(f"/runs/{run_id}", headers=auth(ALICE)).status_code == 204
+    assert client.get("/runs", headers=auth(ALICE)).json() == []
+
+
+def test_manual_races_count_for_prediction(client):
+    _manual(client, distance_km=5, duration_s=1200, started_at="2026-09-01T07:00:00Z", is_race=True)
+    _manual(
+        client, distance_km=10, duration_s=2520, started_at="2026-09-08T07:00:00Z", is_race=True
+    )
+    _manual(client, distance_km=8, duration_s=3000, started_at="2026-09-10T07:00:00Z")  # easy
+    body = client.get("/predictions", headers=auth(ALICE)).json()
+    assert body["envelope_size"] == 2  # the two races; the easy run isn't an effort
+
+
+def test_two_manual_runs_do_not_clash_as_duplicates(client):
+    assert _manual(client).status_code == 201
+    assert _manual(client).status_code == 201
