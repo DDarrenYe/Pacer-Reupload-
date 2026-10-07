@@ -10,12 +10,26 @@ import { useSlowNotice } from "../useSlowNotice";
 export default function Runs() {
   const [runs, setRuns] = useState<Run[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [recalc, setRecalc] = useState<{ busy: boolean; message: string | null }>({ busy: false, message: null });
   const slow = useSlowNotice(runs === null && !error);
 
   const load = useCallback(() => {
     api.listRuns().then(setRuns, (e: Error) => setError(e.message));
   }, []);
   useEffect(load, [load]);
+
+  async function recalculateAll() {
+    if (!confirm("Recalculate every run from its original file? This picks up the latest fixes to distance, pace and splits.")) return;
+    setRecalc({ busy: true, message: null });
+    try {
+      const { reprocessed, failed } = await api.reprocessAll();
+      const note = failed ? ` ${failed} couldn't be recalculated (original file missing).` : "";
+      setRecalc({ busy: false, message: `Recalculated ${reprocessed} run${reprocessed === 1 ? "" : "s"}.${note}` });
+      load();
+    } catch (e) {
+      setRecalc({ busy: false, message: (e as Error).message });
+    }
+  }
 
   return (
     <main>
@@ -27,6 +41,7 @@ export default function Runs() {
           <p className="muted">{slow ? "Waking up the server; this can take up to a minute…" : "Loading…"}</p>
         )}
         {runs?.length === 0 && <p className="muted">No runs yet. Upload one above.</p>}
+        {recalc.message && <p className="info" role="status">{recalc.message}</p>}
         {runs && runs.length > 0 && (
           <div className="table-scroll">
             <table>
@@ -57,6 +72,13 @@ export default function Runs() {
                 ))}
               </tbody>
             </table>
+          </div>
+        )}
+        {runs && runs.length > 0 && (
+          <div className="actions" style={{ marginTop: 12 }}>
+            <button className="secondary" onClick={recalculateAll} disabled={recalc.busy}>
+              {recalc.busy ? "Recalculating…" : "Recalculate all runs"}
+            </button>
           </div>
         )}
       </section>

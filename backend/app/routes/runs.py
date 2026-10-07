@@ -17,7 +17,7 @@ from app.db import DbSession
 from app.models import BestEffort, Run, Split
 from app.routes.files import CONTENT_TYPES, parse_file, read_upload
 from app.schemas.run import RunDetail, RunOut, RunSummary
-from app.storage import StorageDep
+from app.storage import Storage, StorageDep, StorageError
 
 router = APIRouter(prefix="/runs", tags=["runs"])
 
@@ -81,6 +81,22 @@ def create_run(
     return run
 
 
+@router.post("/reprocess-all")
+def reprocess_all_runs(user_id: CurrentUserId, db: DbSession, storage: StorageDep) -> dict:
+    """Recalculate every one of your runs from its stored file (after a parser fix)."""
+    runs = db.scalars(select(Run).where(Run.user_id == user_id)).all()
+    done = failed = 0
+    for run in runs:
+        try:
+            _reprocess(run, storage)
+            db.commit()
+            done += 1
+        except (HTTPException, StorageError):
+            db.rollback()
+            failed += 1
+    return {"reprocessed": done, "failed": failed}
+
+
 @router.get("", response_model=list[RunOut])
 def list_runs(user_id: CurrentUserId, db: DbSession) -> list[Run]:
     """Your runs, newest first."""
@@ -111,12 +127,16 @@ def reprocess_run(
     Use this for runs uploaded before an analytics change, or after changing the surface.
     """
     run = _get_own_run(db, run_id, user_id)
+    _reprocess(run, storage)
+    db.commit()
+    return run
+
+
+def _reprocess(run: Run, storage: Storage) -> None:
     suffix = "." + run.raw_file_key.rsplit(".", 1)[-1]
     summary, series = parse_file(suffix, storage.download(run.raw_file_key))
     _apply_summary(run, summary)
     _apply_analytics(run, series)
-    db.commit()
-    return run
 
 
 @router.delete("/{run_id}", status_code=204)

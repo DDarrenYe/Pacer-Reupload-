@@ -48,6 +48,8 @@ export const api = {
   trainingLoad: (days = 84) => request<LoadDay[]>(`/training-load?days=${days}`),
   getRun: (id: string) => request<RunDetail>(`/runs/${id}`),
   reprocessRun: (id: string) => request<RunDetail>(`/runs/${id}/reprocess`, { method: "POST" }),
+  reprocessAll: () =>
+    request<{ reprocessed: number; failed: number }>("/runs/reprocess-all", { method: "POST" }),
   deleteRun: (id: string) => request<void>(`/runs/${id}`, { method: "DELETE" }),
   uploadRun: (input: {
     file: File;

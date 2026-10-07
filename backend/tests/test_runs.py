@@ -2,6 +2,7 @@ import uuid
 
 import pytest
 
+from app.storage import StorageError
 from tests.conftest import auth, make_token
 
 ALICE = uuid.uuid4()
@@ -274,3 +275,30 @@ def test_which_efforts_feed_predictions(db_session_factory):
         db.commit()
         efforts = load_efforts(db, ALICE)
     assert sorted((e.distance_m, e.is_race) for e in efforts) == [(5000, False), (10000, True)]
+
+
+def test_reprocess_all_only_touches_your_runs(client, data_dir, db_session_factory):
+    from app.models import Run
+
+    mine = upload(client, data_dir, user=ALICE).json()["id"]
+    theirs = upload(client, data_dir, user=BOB).json()["id"]
+    with db_session_factory() as db:  # pretend both were saved with old numbers
+        for rid in (mine, theirs):
+            db.get(Run, uuid.UUID(rid)).distance_m = 1.0
+        db.commit()
+
+    r = client.post("/runs/reprocess-all", headers=auth(ALICE))
+    assert r.json() == {"reprocessed": 1, "failed": 0}
+    with db_session_factory() as db:
+        assert db.get(Run, uuid.UUID(mine)).distance_m == pytest.approx(3000, abs=1)
+        assert db.get(Run, uuid.UUID(theirs)).distance_m == 1.0
+
+
+def test_reprocess_all_counts_missing_files(client, data_dir, storage):
+    upload(client, data_dir)
+    storage.files.clear()  # the stored original has gone
+    storage.download = lambda key: (_ for _ in ()).throw(StorageError("missing"))
+    assert client.post("/runs/reprocess-all", headers=auth(ALICE)).json() == {
+        "reprocessed": 0,
+        "failed": 1,
+    }
