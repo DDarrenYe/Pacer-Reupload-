@@ -19,6 +19,8 @@ class Settings(BaseSettings):
     # Newer projects use asymmetric keys, which are fetched from the JWKS endpoint.
     supabase_jwt_secret: str = ""
     storage_bucket: str = "raw-uploads"
+    # Comma-separated origins allowed to call the API from a browser (the front end).
+    cors_origins: str = "http://localhost:5173"
 
     @field_validator("supabase_url")
     @classmethod
@@ -27,6 +29,10 @@ class Settings(BaseSettings):
         # Storage live beside it, not under it, so keep just https://<ref>.supabase.co.
         url = url.strip().rstrip("/")
         return url.removesuffix("/rest/v1")
+
+    @property
+    def cors_origin_list(self) -> list[str]:
+        return [o.strip().rstrip("/") for o in self.cors_origins.split(",") if o.strip()]
 
 
 @lru_cache

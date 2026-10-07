@@ -4,7 +4,7 @@ Upload a GPX or CSV run and get pace splits, fatigue trends and a predicted race
 
 - **Live API:** https://run-analytics-api.onrender.com ([interactive docs](https://run-analytics-api.onrender.com/docs), [health check](https://run-analytics-api.onrender.com/health))
   - It runs on Render's free tier, which sleeps when idle, so the first request can take 30–60 s.
-- **Status:** Week 3 of 6 is built and waiting to be checked on real runs. Each run gets pace splits, pace drift, best efforts and training load (ACWR). Week 4 (React front end) is next. See the [project plan](docs/PROJECT_PLAN.md) and [design decisions and lessons](docs/DECISIONS.md).
+- **Status:** Week 4 of 6 is built. There's a React front end with login, upload, a runs list and a run page with pace and heart-rate charts; deploying it to Vercel is the remaining step. Week 5 (trends and race prediction) is next. See the [project plan](docs/PROJECT_PLAN.md) and [design decisions and lessons](docs/DECISIONS.md).
 
 ## API
 
@@ -43,8 +43,20 @@ The server keeps that Terminal tab busy, so run other commands in a second tab (
 
 Get a token with `python scripts/get_token.py`. Then open http://localhost:8000/docs, click **Authorize**, paste the token, and try `POST /runs`. Tokens last about an hour.
 
-### 3. Deploy to Render
-On Render, go to **New → Blueprint**, pick this repo and branch, and fill in `DATABASE_URL`, `SUPABASE_URL`, `SUPABASE_SECRET_KEY` and, for legacy projects only, `SUPABASE_JWT_SECRET`. `render.yaml` takes care of the rest, and migrations run automatically on every start.
+### 3. Run the front end locally
+```bash
+cd frontend
+npm install
+cp .env.example .env.local   # set VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY
+npm run dev                  # http://localhost:5173 (keep the API running too)
+```
+`npm test` runs the unit tests, and `npm run build` checks types and builds.
+
+### 4. Deploy to Render
+On Render, go to **New → Blueprint**, pick this repo and branch, and fill in `DATABASE_URL`, `SUPABASE_URL`, `SUPABASE_SECRET_KEY` and, for legacy projects only, `SUPABASE_JWT_SECRET`. `render.yaml` takes care of the rest, and migrations run automatically on every start. Set `CORS_ORIGINS` to the front end's address, for example `https://your-app.vercel.app,http://localhost:5173`.
+
+### 5. Deploy the front end to Vercel
+On Vercel, go to **Add New → Project**, import this repo, set **Root Directory** to `frontend`, and add the three `VITE_*` variables. Point `VITE_API_URL` at the Render URL. `vercel.json` sends every path to the app, so links like `/runs/<id>` work on refresh. In Supabase, go to **Authentication → URL Configuration** and set the Site URL to the Vercel address, so sign-up confirmation emails link back to the app.
 
 ## Tests and lint
 ```bash

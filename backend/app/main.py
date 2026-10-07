@@ -1,8 +1,10 @@
 import logging
 
 from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from app.config import get_settings
 from app.routes import load, runs, uploads
 from app.storage import StorageError
 
@@ -11,7 +13,14 @@ logger = logging.getLogger(__name__)
 app = FastAPI(
     title="Run Analytics API",
     description="Upload GPX or CSV runs and get splits, fatigue trends and race predictions.",
-    version="0.3.0",
+    version="0.4.0",
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=get_settings().cors_origin_list,
+    allow_methods=["GET", "POST", "DELETE"],
+    allow_headers=["Authorization", "Content-Type"],
 )
 
 app.include_router(uploads.router)

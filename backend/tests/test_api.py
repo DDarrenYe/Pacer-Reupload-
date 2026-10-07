@@ -37,3 +37,19 @@ def test_bad_file_returns_422(data_dir):
 def test_unsupported_type_returns_415():
     r = client.post("/uploads/parse", files={"file": ("run.fit", b"\x00\x01")})
     assert r.status_code == 415
+
+
+def test_cors_allows_the_front_end():
+    r = client.options(
+        "/runs",
+        headers={"Origin": "http://localhost:5173", "Access-Control-Request-Method": "GET"},
+    )
+    assert r.headers["access-control-allow-origin"] == "http://localhost:5173"
+
+
+def test_cors_rejects_other_sites():
+    r = client.options(
+        "/runs",
+        headers={"Origin": "https://evil.example", "Access-Control-Request-Method": "GET"},
+    )
+    assert "access-control-allow-origin" not in r.headers

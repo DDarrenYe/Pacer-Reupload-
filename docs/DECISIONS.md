@@ -4,6 +4,29 @@ This file records why the project is built the way it is: the choices I made, wh
 
 ---
 
+## Week 4: front end
+
+### The browser logs in with Supabase, and talks to the API for everything else
+- **Decision:** The React app uses `supabase-js` only for sign-in and sign-up. Every data request goes to my API with the user's access token, and the client refreshes that token automatically.
+- **Why:** The browser never touches the database, so row level security can stay "deny everything" (see Week 2), and all the rules live in one tested place.
+- **Detail:** The publishable key in the bundle is meant to be public. The secret key exists only on the server.
+
+### CORS limited to known origins
+- **Decision:** The API only accepts browser requests from origins listed in `CORS_ORIGINS` (the Vercel site and `localhost:5173`), and only the methods and headers the app uses.
+- **Why:** Auth tokens already stop strangers reading data, and CORS adds a second layer so other websites can't use a logged-in user's browser to call the API. Tests check one allowed and one blocked origin.
+
+### Charts: one measure per chart, faster at the top
+- **Decision:** Pace and heart rate get **separate** charts rather than one chart with two y-axes. The pace axis is reversed so that faster is higher, and the caption says so. Each chart has a single series, so there's no legend; the title names it. Colours come from CSS tokens with their own light and dark values, not an automatic inversion.
+- **Why:** Dual-axis charts make readers compare two unrelated scales, and the line crossings mean nothing. Runners read "up" as better, so a pace chart where up means slower reads backwards. Fastest and slowest splits are marked with text tags in the table, so identity never relies on colour alone.
+
+### Explaining slow first loads
+- **Decision:** If a request takes more than 4 s, the app says the server is waking up (Render's free tier sleeps). The run page, and with it Chart.js, loads only when it's opened, which keeps the first download smaller.
+
+### Tested in a real browser before shipping
+- **Decision:** Before pushing, I ran the API on Postgres with a local stand-in for Supabase Storage, started the app, and drove it with Playwright: upload, run page, duplicate upload, light and dark mode, and phone width. I checked the screenshots by eye. It found two things to fix: an inconsistent label on the partial split, and a missing favicon (a 404 in the console).
+
+---
+
 ## Week 3: analytics
 
 ### One shape for every run
