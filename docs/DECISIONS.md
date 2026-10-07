@@ -4,6 +4,47 @@ This file records why the project is built the way it is: the choices I made, wh
 
 ---
 
+## Week 3: analytics
+
+### One shape for every run
+- **Decision:** Every run, GPX or CSV, is converted to a `RunSeries`: cumulative distance against cumulative **moving** time. Splits, best efforts and drift all work on that single shape.
+- **Why:** Each metric is written and tested once, and treadmill laps and GPS tracks are handled the same way. Using moving time means a stop at traffic lights doesn't count against a split.
+- **Trade-off:** A CSV lap only has its end points, so pace is assumed to be even within each lap. A best effort that falls inside a lap is an estimate.
+- **Code:** [`backend/app/analytics/series.py`](../backend/app/analytics/series.py)
+
+### Splits and split type
+- **Decision:** Splits are every 1 km, or every 400 m when the run's surface is `track`. A leftover under 50 m is added to the last split instead of being shown as a 12 m "split". The split type compares the time for the second half of the distance with the first, with a ±1% band counting as even.
+- **Why:** These match how runners already talk about splits. The ±1% band stops a 2-second difference being labelled a positive split.
+- **Code:** [`backend/app/analytics/splits.py`](../backend/app/analytics/splits.py)
+
+### Pace drift as the fatigue measure
+- **Decision:** Fatigue is measured as the least-squares slope of split pace against distance (s/km per km), using full splits only, and needs at least 3 of them.
+- **Why:** It's one number with an obvious meaning: "+5" means each km was about 5 s slower than the one before. It uses every split, not just the first and last, so one odd split has less effect.
+- **Limits:** It doesn't know about hills, so a hilly second half looks like fatigue. Interval sessions break it, because pace swings by design. Correcting for elevation, or detecting intervals, are possible next steps.
+- **Code:** [`backend/app/analytics/fatigue.py`](../backend/app/analytics/fatigue.py)
+
+### Best efforts with a sliding window
+- **Decision:** For each standard distance, a window starts at every sample. Its end time is interpolated, and the fastest window wins. Durations are rounded to 0.1 s before choosing, so ties go to the **earliest** effort.
+- **Why:** The fastest 5 km is rarely exactly km 0–5. These efforts are what race prediction (Week 5) will use, because easy runs aren't max efforts but a fast stretch inside one can be.
+- **Limits:** GPS noise can flatter very short efforts like 400 m, and CSV efforts are estimates (see above).
+- **Code:** [`backend/app/analytics/best_efforts.py`](../backend/app/analytics/best_efforts.py)
+
+### Training load as moving minutes, with ACWR
+- **Decision:** A run's load is its moving time in minutes. Acute load is the sum over 7 days, chronic load is the weekly average over 28 days, and ACWR is acute divided by chronic. It's flagged above 1.5 (spike) or below 0.8 (low), and only once there are 21 days of history.
+- **Why:** Time-based load is transparent and works for every run, with or without heart rate. ACWR turns two windows into one number that's easy to read.
+- **Limits:** Load ignores intensity, so a 60-minute easy run counts the same as a 60-minute tempo run. ACWR's power to predict injury is debated in sports-science research, so the app presents it as a description of training changes, not an injury risk score. Dates are in UTC.
+- **Code:** [`backend/app/analytics/load.py`](../backend/app/analytics/load.py)
+
+### Analytics stored, and reproducible from the original file
+- **Decision:** Analytics are computed at upload and stored in `splits` and `best_efforts` tables, plus a few columns on `runs`. `POST /runs/{id}/reprocess` downloads the original file from storage and recomputes everything.
+- **Why:** Reads stay fast and simple. Keeping the raw file (a Week 2 decision) pays off here: runs uploaded before this week, or before any future change to the analytics, can be brought up to date without re-uploading.
+- **Migration:** `0002` adds the tables and columns without touching existing rows, and enables RLS on the new tables. It was tested by upgrading a Postgres database that already held a pre-analytics run.
+
+### Heart rate from GPX extensions
+- **Decision:** Heart rate is read from Garmin-style `<gpxtpx:hr>` extensions, which Strava and Garmin exports include. Averages are time-weighted, so a long stretch at one heart rate counts more than a brief spike.
+
+---
+
 ## Week 2: storage, auth and deployment
 
 ### One Supabase project for the database, auth and file storage
@@ -82,6 +123,7 @@ This file records why the project is built the way it is: the choices I made, wh
 
 | Symptom | Cause | Fix | Found by |
 |---|---|---|---|
+| Best efforts reported a random one of several equal efforts | Float noise in interpolated times made identical efforts differ in the 10th decimal place | Round durations to 0.1 s before picking the minimum, so ties go to the earliest; covered by a test | Checking the analytics on the synthetic run |
 | Upload returned a bare **500** when storage was unreachable | httpx network errors weren't wrapped, so they skipped the storage error handler | Wrap them in `StorageError` → clear **503**, with no database row saved, plus a test | Smoke test with storage pointed at a dead port |
 | An upload would block the whole server while it saved | Synchronous database and HTTP calls inside `async def` routes | Made the routes plain `def`, so FastAPI runs them in its thread pool | Reviewing my own diff |
 | Login failed with `PGRST125` | `SUPABASE_URL` was pasted from Supabase's Data API page with `/rest/v1` on the end, so the login request went to the database REST API | Settings normalise the URL to the project base, with a test | Setting up locally |
@@ -90,5 +132,6 @@ This file records why the project is built the way it is: the choices I made, wh
 ---
 
 ## Open questions
-- **Treadmill runs:** a GPX export of an indoor run has no usable distance, because it has no GPS. For now, treadmill runs come in as CSV laps. Importing the original watch file (FIT or TCX), which records distance every second, is a stretch goal.
-- **Fatigue (Week 3):** how should pace drop-off be measured? A plain slope of pace against distance is easy to explain, but it's thrown off by hills and pauses. Options include using only moving splits, or correcting for elevation.
+- **Treadmill runs:** a GPX export of an indoor run has no usable distance, because it has no GPS. For now, treadmill runs come in as CSV laps, and the GPX error message says so. Importing the original watch file (FIT or TCX), which records distance every second, is a stretch goal.
+- **Intensity in training load:** add a 1–10 effort rating (session RPE) or heart-rate-based TRIMP so that load reflects how hard a run was, not just how long.
+- **Fatigue on hilly routes:** correct pace for elevation (grade-adjusted pace) before measuring drift.

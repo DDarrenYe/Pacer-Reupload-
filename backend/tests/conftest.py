@@ -34,6 +34,9 @@ class FakeStorage:
     def delete(self, key: str) -> None:
         self.files.pop(key, None)
 
+    def download(self, key: str) -> bytes:
+        return self.files[key]
+
 
 @pytest.fixture(autouse=True)
 def test_settings(monkeypatch):

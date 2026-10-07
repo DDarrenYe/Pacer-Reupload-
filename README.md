@@ -4,17 +4,19 @@ Upload a GPX or CSV run and get pace splits, fatigue trends and a predicted race
 
 - **Live API:** https://run-analytics-api.onrender.com ([interactive docs](https://run-analytics-api.onrender.com/docs), [health check](https://run-analytics-api.onrender.com/health))
   - It runs on Render's free tier, which sleeps when idle, so the first request can take 30–60 s.
-- **Status:** Week 2 of 6 is done. Runs are saved per user (Supabase Postgres + Storage, Supabase Auth) and the API is live. Week 3 (splits, fatigue, best efforts) is next. See the [project plan](docs/PROJECT_PLAN.md) and [design decisions and lessons](docs/DECISIONS.md).
+- **Status:** Week 3 of 6 is built and waiting to be checked on real runs. Each run gets pace splits, pace drift, best efforts and training load (ACWR). Week 4 (React front end) is next. See the [project plan](docs/PROJECT_PLAN.md) and [design decisions and lessons](docs/DECISIONS.md).
 
 ## API
 
 | Method | Path | Auth | What it does |
 |---|---|---|---|
 | POST | `/uploads/parse` | – | Parse a GPX/CSV file and return a summary. Nothing is saved. |
-| POST | `/runs` | ✔ | Upload a file and save it as a run (409 if you've uploaded it before) |
+| POST | `/runs` | ✔ | Upload a file and save it as a run, with its analytics (409 if you've uploaded it before) |
 | GET | `/runs` | ✔ | Your runs, newest first |
-| GET | `/runs/{id}` | ✔ | One of your runs |
+| GET | `/runs/{id}` | ✔ | One of your runs, with splits and best efforts |
+| POST | `/runs/{id}/reprocess` | ✔ | Redo parsing and analytics from the stored original file |
 | DELETE | `/runs/{id}` | ✔ | Delete a run and its stored file |
+| GET | `/training-load?days=56` | ✔ | Daily load, 7-day acute, 28-day chronic and ACWR |
 | GET | `/health` | – | Liveness check |
 
 Authenticated routes need a Supabase access token: `Authorization: Bearer <token>`.
@@ -52,6 +54,17 @@ TEST_DATABASE_URL=postgresql://... pytest   # optional: run against Postgres
 ruff check . && ruff format --check .
 ```
 CI runs lint, applies the migrations to a real Postgres 16, checks they match the models, then runs the tests against Postgres.
+
+## Analytics
+
+| Metric | How it's worked out |
+|---|---|
+| Splits | Every 1 km, or every 400 m when the surface is `track`, using moving time. A leftover under 50 m is added to the last split. |
+| Split type | Second half of the distance against the first: more than 1% faster is **negative**, more than 1% slower is **positive**, otherwise **even**. |
+| Pace drift | Least-squares slope of split pace against distance, in s/km per km. Positive means slowing down. Needs 3 or more full splits. |
+| Best efforts | Fastest 400 m, 1 km, 1 mile, 5 km, 10 km, half and full marathon anywhere in the run (sliding window). |
+| Training load | Moving minutes per day. ACWR is the last 7 days divided by the weekly average of the last 28 days: above 1.5 is a spike, below 0.8 is low. Needs 21 days of history. |
+| Heart rate | Read from Garmin-style GPX extensions (Strava and Garmin exports) or a CSV `avg_hr` column, and time-weighted. |
 
 ## Supported files
 

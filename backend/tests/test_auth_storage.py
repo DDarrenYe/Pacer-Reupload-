@@ -59,14 +59,16 @@ def test_storage_requests(monkeypatch):
         return send
 
     monkeypatch.setattr(httpx, "post", fake("POST"))
+    monkeypatch.setattr(httpx, "get", fake("GET"))
     monkeypatch.setattr(httpx, "delete", fake("DELETE"))
 
     s = SupabaseStorage("https://abc.supabase.co/", "secret", "raw-uploads")
     s.upload("user/hash.gpx", b"data", "application/gpx+xml")
+    s.download("user/hash.gpx")
     s.delete("user/hash.gpx")
 
     url = "https://abc.supabase.co/storage/v1/object/raw-uploads/user/hash.gpx"
-    assert [(m, u) for m, u, _ in calls] == [("POST", url), ("DELETE", url)]
+    assert [(m, u) for m, u, _ in calls] == [("POST", url), ("GET", url), ("DELETE", url)]
     assert calls[0][2]["Authorization"] == "Bearer secret"
 
 

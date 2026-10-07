@@ -3,7 +3,7 @@ import logging
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
-from app.routes import runs, uploads
+from app.routes import load, runs, uploads
 from app.storage import StorageError
 
 logger = logging.getLogger(__name__)
@@ -11,11 +11,12 @@ logger = logging.getLogger(__name__)
 app = FastAPI(
     title="Run Analytics API",
     description="Upload GPX or CSV runs and get splits, fatigue trends and race predictions.",
-    version="0.2.0",
+    version="0.3.0",
 )
 
 app.include_router(uploads.router)
 app.include_router(runs.router)
+app.include_router(load.router)
 
 
 @app.exception_handler(StorageError)

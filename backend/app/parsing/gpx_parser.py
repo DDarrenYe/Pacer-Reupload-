@@ -4,6 +4,7 @@ Output columns:
     time        UTC timestamp of the point
     lat, lon    degrees
     ele         metres (NaN if the file has no elevation)
+    hr          heart rate in bpm (NaN if the file has none)
     dist_m      distance from the previous point
     cum_dist_m  running total distance
     elapsed_s   seconds since the first point
@@ -28,6 +29,10 @@ MAX_GAP_S = 60.0
 # Faster than this is a GPS glitch (Usain Bolt tops out around 12.4 m/s).
 MAX_PLAUSIBLE_SPEED_MS = 12.0
 
+NO_GPS_HINT = (
+    " Treadmill and other indoor runs have no GPS track; upload those as a CSV of laps instead."
+)
+
 
 def parse_gpx(content: str | bytes) -> pd.DataFrame:
     try:
@@ -36,22 +41,25 @@ def parse_gpx(content: str | bytes) -> pd.DataFrame:
         raise ParseError("This doesn't look like a valid GPX file.") from exc
 
     points = [
-        (p.time, p.latitude, p.longitude, p.elevation)
+        (p.time, p.latitude, p.longitude, p.elevation, _heart_rate(p))
         for track in gpx.tracks
         for segment in track.segments
         for p in segment.points
     ]
     if len(points) < 2:
-        raise ParseError("The GPX file has no track (it needs at least two recorded points).")
+        raise ParseError(
+            "The GPX file has no track (it needs at least two recorded points)." + NO_GPS_HINT
+        )
     if any(t is None for t, *_ in points):
         raise ParseError(
             "The GPX file has points without timestamps, so pace can't be calculated. "
             "Export the activity (not the route) from your watch or app."
         )
 
-    df = pd.DataFrame(points, columns=["time", "lat", "lon", "ele"])
+    df = pd.DataFrame(points, columns=["time", "lat", "lon", "ele", "hr"])
     df["time"] = pd.to_datetime(df["time"], utc=True)
     df["ele"] = df["ele"].astype(float)
+    df["hr"] = df["hr"].astype(float)
 
     # Many devices write the same timestamp twice; keep the first.
     df = df.drop_duplicates(subset="time", keep="first").reset_index(drop=True)
@@ -62,6 +70,18 @@ def parse_gpx(content: str | bytes) -> pd.DataFrame:
 
     df = _drop_gps_spikes(df)
     return _add_derived_columns(df)
+
+
+def _heart_rate(point: gpxpy.gpx.GPXTrackPoint) -> float | None:
+    """Heart rate from Garmin-style extensions (<gpxtpx:hr>), as Strava and Garmin export."""
+    for ext in point.extensions:
+        for el in ext.iter():
+            if str(el.tag).rsplit("}", 1)[-1] == "hr" and el.text:
+                try:
+                    return float(el.text)
+                except ValueError:
+                    return None
+    return None
 
 
 def _drop_gps_spikes(df: pd.DataFrame) -> pd.DataFrame:
@@ -98,10 +118,16 @@ def summarize_track(df: pd.DataFrame) -> RunSummary:
     moving_time = float(dt[df["moving"]].sum())
     distance = float(df["cum_dist_m"].iloc[-1])
     if distance <= 0 or moving_time <= 0:
-        raise ParseError("The GPX track has no movement in it.")
+        raise ParseError("The GPX track has no movement in it." + NO_GPS_HINT)
 
     ele = df["ele"]
     gain = None if ele.isna().all() else float(ele.diff().clip(lower=0).sum())
+
+    # Time-weighted: each point's heart rate covers the moving time since the previous point.
+    hr_dt = dt.where(df["moving"] & df["hr"].notna(), 0)
+    avg_hr = (
+        round(float((df["hr"].fillna(0) * hr_dt).sum() / hr_dt.sum()), 1) if hr_dt.sum() else None
+    )
 
     return RunSummary(
         source="gpx",
@@ -111,5 +137,6 @@ def summarize_track(df: pd.DataFrame) -> RunSummary:
         moving_time_s=moving_time,
         avg_pace_s_per_km=round(moving_time / (distance / 1000), 1),
         elevation_gain_m=None if gain is None else round(gain, 1),
+        avg_hr=avg_hr,
         point_count=len(df),
     )

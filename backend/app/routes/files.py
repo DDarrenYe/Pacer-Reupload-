@@ -2,6 +2,7 @@ from pathlib import Path
 
 from fastapi import HTTPException, UploadFile
 
+from app.analytics.series import RunSeries, series_from_laps, series_from_track
 from app.parsing.csv_parser import parse_csv, summarize_laps
 from app.parsing.errors import ParseError
 from app.parsing.gpx_parser import parse_gpx, summarize_track
@@ -22,10 +23,13 @@ def read_upload(file: UploadFile) -> tuple[str, bytes]:
     return suffix, content
 
 
-def summarize(suffix: str, content: bytes) -> RunSummary:
+def parse_file(suffix: str, content: bytes) -> tuple[RunSummary, RunSeries]:
+    """Parse an uploaded file into its summary and the series the analytics use."""
     try:
         if suffix == ".gpx":
-            return summarize_track(parse_gpx(content))
-        return summarize_laps(parse_csv(content))
+            track = parse_gpx(content)
+            return summarize_track(track), series_from_track(track)
+        laps = parse_csv(content)
+        return summarize_laps(laps), series_from_laps(laps)
     except ParseError as exc:
         raise HTTPException(422, str(exc)) from exc

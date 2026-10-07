@@ -17,6 +17,8 @@ class Storage(Protocol):
 
     def delete(self, key: str) -> None: ...
 
+    def download(self, key: str) -> bytes: ...
+
 
 class SupabaseStorage:
     def __init__(self, url: str, secret_key: str, bucket: str):
@@ -35,6 +37,15 @@ class SupabaseStorage:
             raise StorageError(f"Storage unreachable: {exc}") from exc
         if r.is_error:
             raise StorageError(f"Storage upload failed ({r.status_code}): {r.text}")
+
+    def download(self, key: str) -> bytes:
+        try:
+            r = httpx.get(f"{self._base}/{key}", headers=self._headers, timeout=30)
+        except httpx.HTTPError as exc:
+            raise StorageError(f"Storage unreachable: {exc}") from exc
+        if r.is_error:
+            raise StorageError(f"Storage download failed ({r.status_code}): {r.text}")
+        return r.content
 
     def delete(self, key: str) -> None:
         try:

@@ -15,6 +15,7 @@ def test_columns(sample):
         "lat",
         "lon",
         "ele",
+        "hr",
         "dist_m",
         "cum_dist_m",
         "elapsed_s",
@@ -38,6 +39,7 @@ def test_summary(sample):
     assert s.avg_pace_s_per_km == pytest.approx(300, abs=0.5)
     assert s.elevation_gain_m == pytest.approx(9, abs=0.1)
     assert s.start_time.isoformat() == "2026-10-04T07:00:00+00:00"
+    assert s.avg_hr == pytest.approx(149, abs=0.5)  # 140 -> 158 bpm, evenly
 
 
 def test_pause_marked_not_moving(sample):
@@ -66,6 +68,16 @@ def test_duplicate_timestamps_dropped():
 def test_rejects_bad_files(content, message):
     with pytest.raises(ParseError, match=message):
         parse_gpx(content)
+
+
+def test_no_heart_rate_is_none():
+    gpx = _gpx([("07:00:00", 0.0), ("07:00:10", 0.0003)])
+    assert summarize_track(parse_gpx(gpx)).avg_hr is None
+
+
+def test_treadmill_hint_when_no_track():
+    with pytest.raises(ParseError, match="CSV of laps"):
+        parse_gpx("<gpx version='1.1'><trk><trkseg></trkseg></trk></gpx>")
 
 
 def test_rejects_missing_timestamps(data_dir):

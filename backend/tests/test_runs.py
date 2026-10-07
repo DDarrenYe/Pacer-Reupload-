@@ -104,3 +104,79 @@ def test_bad_file_stores_nothing(client, data_dir, storage):
 )
 def test_requires_valid_token(client, headers):
     assert client.get("/runs", headers=headers).status_code == 401
+
+
+def test_upload_returns_analytics(client, data_dir):
+    run = upload(client, data_dir).json()
+    assert [s["pace_s_per_km"] for s in run["splits"]] == [300, 300, 300]
+    assert run["split_type"] == "even"
+    assert run["pace_drift_s_per_km"] == 0
+    assert run["avg_hr"] == pytest.approx(149, abs=0.5)
+    efforts = {e["name"]: e["duration_s"] for e in run["best_efforts"]}
+    assert efforts == {"400m": 120, "1k": 300, "1 mile": pytest.approx(482.8, abs=0.1)}
+
+    detail = client.get(f"/runs/{run['id']}", headers=auth(ALICE)).json()
+    assert detail["splits"] == run["splits"]
+    assert detail["best_efforts"] == run["best_efforts"]
+
+
+def test_track_runs_split_every_400m(client, data_dir):
+    run = upload(client, data_dir, surface="track").json()
+    assert len(run["splits"]) == 8  # 7 x 400 m + 200 m
+    assert run["splits"][-1]["is_partial"] is True
+    assert all(s["split_length_m"] == 400 for s in run["splits"])
+
+
+def test_list_has_summary_fields_but_not_splits(client, data_dir):
+    upload(client, data_dir)
+    [run] = client.get("/runs", headers=auth(ALICE)).json()
+    assert run["split_type"] == "even"
+    assert "splits" not in run
+
+
+def test_reprocess_rebuilds_analytics_from_stored_file(client, data_dir, db_session_factory):
+    from app.models import Run
+
+    run_id = upload(client, data_dir).json()["id"]
+    # Simulate a run saved before analytics existed
+    with db_session_factory() as db:
+        run = db.get(Run, uuid.UUID(run_id))
+        run.splits, run.best_efforts, run.split_type = [], [], None
+        db.commit()
+    assert client.get(f"/runs/{run_id}", headers=auth(ALICE)).json()["splits"] == []
+
+    r = client.post(f"/runs/{run_id}/reprocess", headers=auth(ALICE))
+    assert r.status_code == 200
+    assert len(r.json()["splits"]) == 3
+    assert r.json()["split_type"] == "even"
+    assert client.post(f"/runs/{run_id}/reprocess", headers=auth(BOB)).status_code == 404
+
+
+def test_delete_removes_splits_and_best_efforts(client, data_dir, db_session_factory):
+    from app.models import BestEffort, Split
+
+    run_id = upload(client, data_dir).json()["id"]
+    client.delete(f"/runs/{run_id}", headers=auth(ALICE))
+    with db_session_factory() as db:
+        assert db.query(Split).count() == 0
+        assert db.query(BestEffort).count() == 0
+
+
+def test_training_load(client, data_dir):
+    upload(client, data_dir, "treadmill.csv", started_at=_today_iso())
+    days = client.get("/training-load?days=7", headers=auth(ALICE)).json()
+    assert len(days) == 7
+    today = days[-1]
+    assert today["load_min"] == pytest.approx(1450 / 60, abs=0.1)
+    assert today["acute_7d"] == today["load_min"]
+    assert today["acwr"] is None  # not enough history yet
+
+    assert client.get("/training-load", headers=auth(BOB)).json()[-1]["load_min"] == 0
+    assert client.get("/training-load?days=3", headers=auth(ALICE)).status_code == 422
+    assert client.get("/training-load").status_code == 401
+
+
+def _today_iso() -> str:
+    from datetime import UTC, datetime
+
+    return datetime.now(UTC).replace(hour=0, minute=1).isoformat()
