@@ -2,9 +2,10 @@
 
 Upload a GPX or CSV run and get pace splits, fatigue trends and a predicted race time. It handles outdoor GPS runs and treadmill sessions with no GPS.
 
+- **Live app:** https://training-analytics-tool.vercel.app
 - **Live API:** https://run-analytics-api.onrender.com ([interactive docs](https://run-analytics-api.onrender.com/docs), [health check](https://run-analytics-api.onrender.com/health))
   - It runs on Render's free tier, which sleeps when idle, so the first request can take 30–60 s.
-- **Status:** Week 4 of 6 is built. There's a React front end with login, upload, a runs list and a run page with pace and heart-rate charts; deploying it to Vercel is the remaining step. Week 5 (trends and race prediction) is next. See the [project plan](docs/PROJECT_PLAN.md) and [design decisions and lessons](docs/DECISIONS.md).
+- **Status:** Weeks 1–4 of 6 are done. The app is live: log in, upload GPX/CSV runs, and see splits, pace drift, best efforts and heart rate. Week 5 (trends page and race prediction) is next. See the [project plan](docs/PROJECT_PLAN.md) and [design decisions and lessons](docs/DECISIONS.md).
 
 ## API
 

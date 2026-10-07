@@ -39,6 +39,7 @@ This file records why the project is built the way it is: the choices I made, wh
 - **Decision:** Splits are every 1 km, or every 400 m when the run's surface is `track`. A leftover under 50 m is added to the last split instead of being shown as a 12 m "split". The split type compares the time for the second half of the distance with the first, with a ±1% band counting as even.
 - **Why:** These match how runners already talk about splits. The ±1% band stops a 2-second difference being labelled a positive split.
 - **Code:** [`backend/app/analytics/splits.py`](../backend/app/analytics/splits.py)
+- **Checked on real data:** for a real run, the km splits matched Strava's own splits to within a few seconds per km. Small differences are expected, because Strava smooths GPS and detects pauses differently.
 
 ### Pace drift as the fatigue measure
 - **Decision:** Fatigue is measured as the least-squares slope of split pace against distance (s/km per km), using full splits only, and needs at least 3 of them.
