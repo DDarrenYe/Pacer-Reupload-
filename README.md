@@ -4,7 +4,7 @@ Upload a GPX or CSV run and get pace splits, fatigue trends and a predicted race
 
 - **Live API:** https://run-analytics-api.onrender.com ([interactive docs](https://run-analytics-api.onrender.com/docs), [health check](https://run-analytics-api.onrender.com/health))
   - It runs on Render's free tier, which sleeps when idle, so the first request can take 30–60 s.
-- **Status:** Week 2 of 6 is done. Runs are saved per user (Supabase Postgres + Storage, Supabase Auth) and the API is live. Week 3 (splits, fatigue, best efforts) is next. See the [project plan](docs/PROJECT_PLAN.md).
+- **Status:** Week 2 of 6 is done. Runs are saved per user (Supabase Postgres + Storage, Supabase Auth) and the API is live. Week 3 (splits, fatigue, best efforts) is next. See the [project plan](docs/PROJECT_PLAN.md) and [design decisions and lessons](docs/DECISIONS.md).
 
 ## API
 
