@@ -33,3 +33,18 @@ export function formatDate(iso: string): string {
     year: "numeric",
   });
 }
+
+/** Personal Riegel exponent -> a sentence a runner would understand. */
+export function describeExponent(b: number | null): string {
+  if (b === null) return "Run a GPX effort at two quite different distances (e.g. 5k and 10k) to see your own exponent.";
+  const diff = b - 1.06;
+  if (Math.abs(diff) < 0.015) return `Your exponent is ${b.toFixed(3)}: you slow down over distance about as much as the standard 1.06 predicts.`;
+  return diff > 0
+    ? `Your exponent is ${b.toFixed(3)}, above the standard 1.06: you slow down more than average as races get longer, so speed is your relative strength.`
+    : `Your exponent is ${b.toFixed(3)}, below the standard 1.06: you hold pace better than average as races get longer, so endurance is your relative strength.`;
+}
+
+/** "2026-03-16" -> "16 Mar". */
+export function formatShortDate(isoDate: string): string {
+  return new Date(`${isoDate}T00:00:00`).toLocaleDateString(undefined, { day: "numeric", month: "short" });
+}

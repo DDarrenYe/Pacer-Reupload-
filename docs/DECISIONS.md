@@ -4,6 +4,31 @@ This file records why the project is built the way it is: the choices I made, wh
 
 ---
 
+## Week 5: trends and race prediction
+Full write-up: [`MODEL.md`](MODEL.md).
+
+### Choosing which runs count was harder than the maths
+Three filters were added, each because a test or seeded data showed the model learning the wrong thing:
+- **GPX only for best efforts.** A test caught CSV runs flattening the personal exponent from 1.07 to 1.02. A "best 1 km" inside a one-lap 5 km CSV is just the lap's average pace, because CSV distance is only known at lap ends.
+- **Efforts must cover at least 75% of their run.** On seeded data, a runner generated with exponent 1.08 measured 1.016, because the best 1 km inside a hard 5k is run at 5k pace, not all-out 1 km pace.
+- **A "new best" must beat an earlier effort.** Otherwise the first, often easy, effort at a distance counted as a hard one.
+
+### No intercept in the regression
+- **Decision:** `log(T2/T1) ~ 0 + log(D2/D1) + log(D2/D1):log(weekly km + 1)`.
+- **Why:** With an intercept, the model learned "targets are about 3% faster than their anchor". That's a selection effect (targets are chosen as new bests), not a property of running, and it made later predictions worse (2.3% against 0.8% MAPE on synthetic data). Without it, Riegel is exactly nested in the model, so the comparison is clean.
+
+### Score real cross-distance predictions only
+- **Decision:** Evaluation anchors must be a different distance from the target.
+- **Why:** At first, most test pairs were "predict this 5k from the last 5k", where every method gives about the anchor time and they all tie. That told us nothing about race prediction.
+
+### Report honestly when simple wins
+- With 2 runners and 6 test pairs, Riegel's fixed exponent beat both fitted models. I didn't tune the model to win on my own synthetic data, because that would be overfitting to the generator. The app shows the accuracy table to users, and it says "not enough data" below 3 test pairs.
+
+### Trends charts
+- Weekly distance (bars, starting at zero), average pace and predicted 5k (lines, faster at the top), and ACWR with dashed reference lines at 0.8 and 1.5 named in the caption. One measure per chart, as before. Dense daily series hide their point markers until hovered, and the charts start at the first week with a run.
+
+---
+
 ## Week 4: front end
 
 ### The browser logs in with Supabase, and talks to the API for everything else
@@ -158,4 +183,6 @@ This file records why the project is built the way it is: the choices I made, wh
 ## Open questions
 - **Treadmill runs:** a GPX export of an indoor run has no usable distance, because it has no GPS. For now, treadmill runs come in as CSV laps, and the GPX error message says so. Importing the original watch file (FIT or TCX), which records distance every second, is a stretch goal.
 - **Intensity in training load:** add a 1–10 effort rating (session RPE) or heart-rate-based TRIMP so that load reflects how hard a run was, not just how long.
+- **Hard-effort detection:** use heart rate (or a 1–10 effort rating) to decide which efforts count for prediction, instead of the distance and "beat an earlier best" rules.
+- **More data for the pooled model:** bootstrap it with a public race-results dataset.
 - **Fatigue on hilly routes:** correct pace for elevation (grade-adjusted pace) before measuring drift.

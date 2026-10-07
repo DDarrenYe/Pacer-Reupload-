@@ -8,6 +8,9 @@ import { supabase } from "./supabase";
 
 // The run page pulls in Chart.js; load it only when a run is opened.
 const RunDetail = lazy(() => import("./pages/RunDetail"));
+const Trends = lazy(() => import("./pages/Trends"));
+
+const loading = <main><p className="muted">Loading…</p></main>;
 
 function Nav() {
   const { session } = useAuth();
@@ -15,6 +18,8 @@ function Nav() {
   return (
     <nav className="nav">
       <Link to="/" className="brand">Pacer</Link>
+      <Link to="/">Runs</Link>
+      <Link to="/trends">Trends</Link>
       <span className="muted nav-email">{session.user.email}</span>
       <button className="link" onClick={() => supabase.auth.signOut()}>Sign out</button>
     </nav>
@@ -33,8 +38,18 @@ export default function App() {
             path="/runs/:id"
             element={
               <RequireAuth>
-                <Suspense fallback={<main><p className="muted">Loading…</p></main>}>
+                <Suspense fallback={loading}>
                   <RunDetail />
+                </Suspense>
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/trends"
+            element={
+              <RequireAuth>
+                <Suspense fallback={loading}>
+                  <Trends />
                 </Suspense>
               </RequireAuth>
             }

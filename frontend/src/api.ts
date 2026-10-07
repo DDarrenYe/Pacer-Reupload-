@@ -1,5 +1,13 @@
 import { supabase } from "./supabase";
-import type { Run, RunDetail, Surface } from "./types";
+import type {
+  Evaluation,
+  LoadDay,
+  Run,
+  RunDetail,
+  RunnerPredictions,
+  Surface,
+  Week,
+} from "./types";
 
 const API_URL = import.meta.env.VITE_API_URL.replace(/\/$/, "");
 
@@ -34,6 +42,10 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
 
 export const api = {
   listRuns: () => request<Run[]>("/runs"),
+  predictions: () => request<RunnerPredictions>("/predictions"),
+  evaluation: () => request<Evaluation>("/predictions/evaluation"),
+  trends: (weeks = 26) => request<Week[]>(`/trends?weeks=${weeks}`),
+  trainingLoad: (days = 84) => request<LoadDay[]>(`/training-load?days=${days}`),
   getRun: (id: string) => request<RunDetail>(`/runs/${id}`),
   reprocessRun: (id: string) => request<RunDetail>(`/runs/${id}/reprocess`, { method: "POST" }),
   deleteRun: (id: string) => request<void>(`/runs/${id}`, { method: "DELETE" }),

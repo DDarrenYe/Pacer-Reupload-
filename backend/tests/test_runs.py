@@ -180,3 +180,97 @@ def _today_iso() -> str:
     from datetime import UTC, datetime
 
     return datetime.now(UTC).replace(hour=0, minute=1).isoformat()
+
+
+def _csv_run(km, minutes):
+    return f"distance_km,time\n{km},{minutes}:00\n".encode()
+
+
+def _upload_csv(client, user, km, minutes, day, race=False):
+    return client.post(
+        "/runs",
+        files={"file": (f"{km}-{day}.csv", _csv_run(km, minutes))},
+        data={"started_at": f"{day}T07:00:00Z", "is_race": str(race).lower()},
+        headers=auth(user),
+    )
+
+
+def test_predictions_from_uploaded_runs(client):
+    assert _upload_csv(client, ALICE, 5, 20, "2026-09-01", race=True).status_code == 201
+    assert _upload_csv(client, ALICE, 10, 42, "2026-09-08", race=True).status_code == 201
+    body = client.get("/predictions", headers=auth(ALICE)).json()
+    preds = {p["name"]: p for p in body["predictions"]}
+    # The 10k race anchors the 10k prediction: you've just run it.
+    assert preds["10k"]["riegel_s"] == pytest.approx(42 * 60, abs=1)
+    assert preds["5k"]["riegel_s"] == pytest.approx(20 * 60, abs=1)
+    assert body["personal_exponent"] == pytest.approx(1.07, abs=0.01)  # log2(42/20)
+    assert preds["Marathon"]["extrapolated"] is True
+    assert body["pooled_exponent"] is None  # far too little data to fit
+
+    # Another runner sees only their own (empty) predictions.
+    bob = client.get("/predictions", headers=auth(BOB)).json()
+    assert all(p["riegel_s"] is None for p in bob["predictions"])
+
+
+def test_evaluation_endpoint_with_little_data(client):
+    _upload_csv(client, ALICE, 5, 20, "2026-09-01", race=True)
+    body = client.get("/predictions/evaluation", headers=auth(ALICE)).json()
+    assert body["enough_data"] is False
+    assert body["scores"] == []
+
+
+def test_trends(client):
+    from datetime import UTC, datetime, timedelta
+
+    today = datetime.now(UTC).date()
+    monday = today - timedelta(days=today.weekday())
+    _upload_csv(client, ALICE, 5, 25, monday.isoformat())
+    weeks = client.get("/trends?weeks=4", headers=auth(ALICE)).json()
+    assert len(weeks) == 4
+    assert weeks[-1]["week_start"] == monday.isoformat()
+    assert weeks[-1]["distance_km"] == 5
+    assert weeks[-1]["avg_pace_s_per_km"] == 300
+    assert weeks[0]["runs"] == 0
+    assert client.get("/trends?weeks=4", headers=auth(BOB)).json()[-1]["runs"] == 0
+    assert client.get("/trends").status_code == 401
+
+
+def test_which_efforts_feed_predictions(db_session_factory):
+    from datetime import UTC, datetime
+
+    from app.analytics.data import load_efforts
+    from app.models import BestEffort, Run
+
+    def run(source, distance, race=False, efforts=()):
+        return Run(
+            user_id=ALICE,
+            started_at=datetime(2026, 9, 1, tzinfo=UTC),
+            source=source,
+            surface="road",
+            distance_m=distance,
+            elapsed_s=1,
+            moving_time_s=distance / 4,
+            avg_pace_s_per_km=250,
+            is_race=race,
+            raw_file_key=str(uuid.uuid4()),
+            file_hash=str(uuid.uuid4()),
+            best_efforts=[
+                BestEffort(name=n, distance_m=d, duration_s=d / 4, start_offset_m=0)
+                for n, d in efforts
+            ],
+        )
+
+    with db_session_factory() as db:
+        db.add_all(
+            [
+                # GPX 5.2 km run: its 5k counts, its 1k (nested, 19% of the run) doesn't
+                run("gpx", 5200, efforts=[("5k", 5000), ("1k", 1000)]),
+                # CSV: interpolated efforts never count
+                run("csv", 5000, efforts=[("5k", 5000)]),
+                # A race counts as a whole, from any source
+                run("csv", 10000, race=True),
+            ]
+        )
+        db.commit()
+        efforts = load_efforts(db, ALICE)
+    assert sorted((e.distance_m, e.is_race) for e in efforts) == [(5000, False), (10000, True)]

@@ -75,3 +75,64 @@ class LoadDayOut(BaseModel):
     chronic_28d: float
     acwr: float | None
     flag: Literal["spike", "normal", "low"] | None
+
+
+class PredictionOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    name: str
+    distance_m: float
+    riegel_s: float | None
+    personal_s: float | None
+    pooled_s: float | None
+    anchor_name: str | None
+    anchor_time_s: float | None
+    extrapolated: bool
+
+
+class RunnerPredictionsOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    predictions: list[PredictionOut]
+    personal_exponent: float | None
+    pooled_exponent: float | None
+    weekly_km: float
+    envelope_size: int
+
+
+class MethodScoreOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    method: str
+    n: int
+    mae_s: float | None
+    mape_pct: float | None
+
+
+class CoefficientOut(BaseModel):
+    term: str
+    estimate: float
+    ci_low: float
+    ci_high: float
+
+
+class EvaluationOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    enough_data: bool
+    n_pairs: int
+    n_train: int
+    n_test: int
+    scores: list[MethodScoreOut]
+    coefficients: list[CoefficientOut]
+    formula: str | None
+
+
+class WeekOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    week_start: date
+    runs: int
+    distance_km: float
+    avg_pace_s_per_km: float | None
+    predicted_5k_s: float | None

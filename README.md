@@ -5,7 +5,7 @@ Pacer is a running analytics app. Upload a GPX or CSV run and get pace splits, f
 - **Live app:** https://training-analytics-tool.vercel.app
 - **Live API:** https://run-analytics-api.onrender.com ([interactive docs](https://run-analytics-api.onrender.com/docs), [health check](https://run-analytics-api.onrender.com/health))
   - It runs on Render's free tier, which sleeps when idle, so the first request can take 30–60 s.
-- **Status:** Weeks 1–4 of 6 are done. The app is live: log in, upload GPX/CSV runs, and see splits, pace drift, best efforts and heart rate. Week 5 (trends page and race prediction) is next. See the [project plan](docs/PROJECT_PLAN.md) and [design decisions and lessons](docs/DECISIONS.md).
+- **Status:** Weeks 1–5 of 6 are built. The app is live, with per-run analytics, a trends page and race-time prediction (Riegel, a personal exponent, and a pooled regression scored by MAE). Week 6 is polish and real users. See the [project plan](docs/PROJECT_PLAN.md), [model write-up](docs/MODEL.md) and [design decisions](docs/DECISIONS.md).
 
 ## API
 
@@ -18,6 +18,9 @@ Pacer is a running analytics app. Upload a GPX or CSV run and get pace splits, f
 | POST | `/runs/{id}/reprocess` | ✔ | Redo parsing and analytics from the stored original file |
 | DELETE | `/runs/{id}` | ✔ | Delete a run and its stored file |
 | GET | `/training-load?days=56` | ✔ | Daily load, 7-day acute, 28-day chronic and ACWR |
+| GET | `/trends?weeks=26` | ✔ | Weekly distance, average pace and predicted 5k |
+| GET | `/predictions` | ✔ | 5k, 10k, half and marathon predictions by three methods |
+| GET | `/predictions/evaluation` | ✔ | Accuracy of each method (MAE, time-ordered test; aggregate only) |
 | GET | `/health` | – | Liveness check |
 
 Authenticated routes need a Supabase access token: `Authorization: Bearer <token>`.
@@ -77,6 +80,7 @@ CI runs lint, applies the migrations to a real Postgres 16, checks they match th
 | Pace drift | Least-squares slope of split pace against distance, in s/km per km. Positive means slowing down. Needs 3 or more full splits. |
 | Best efforts | Fastest 400 m, 1 km, 1 mile, 5 km, 10 km, half and full marathon anywhere in the run (sliding window). |
 | Training load | Moving minutes per day. ACWR is the last 7 days divided by the weekly average of the last 28 days: above 1.5 is a spike, below 0.8 is low. Needs 21 days of history. |
+| Race prediction | Riegel (1.06), your own fitted exponent, and a pooled regression on all runners. Only hard efforts count. See [docs/MODEL.md](docs/MODEL.md). |
 | Heart rate | Read from Garmin-style GPX extensions (Strava and Garmin exports) or a CSV `avg_hr` column, and time-weighted. |
 
 ## Supported files

@@ -56,6 +56,7 @@ main.narrow { max-width: 420px; padding-top: 10vh; }
 
 h1 { font-size: 1.6rem; margin: 0; }
 h2 { font-size: 1.1rem; margin: 0 0 12px; }
+h3 { font-size: 1rem; margin: 16px 0 8px; }
 a { color: var(--accent); }
 .muted { color: var(--text-muted); }
 .error { color: var(--critical); background: var(--error-bg); padding: 8px 12px; border-radius: 8px; margin: 0; }
@@ -69,7 +70,9 @@ a { color: var(--accent); }
   background: var(--surface-1);
   border-bottom: 1px solid var(--border);
 }
-.brand { font-weight: 700; text-decoration: none; color: var(--text-primary); margin-right: auto; }
+.brand { font-weight: 700; text-decoration: none; color: var(--text-primary); }
+.nav a:not(.brand) { text-decoration: none; }
+.nav-email { margin-left: auto; }
 .nav-email { font-size: 0.9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .card {
@@ -139,3 +142,7 @@ th { color: var(--text-secondary); font-weight: 600; }
 .chart-box { position: relative; height: 240px; }
 
 .actions { display: flex; gap: 12px; flex-wrap: wrap; }
+@media (max-width: 600px) {
+  .nav-email { display: none; }
+  .nav .link { margin-left: auto; }
+}

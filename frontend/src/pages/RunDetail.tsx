@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 
 import { api } from "../api";
-import SplitChart from "../components/SplitChart";
+import { LineChart } from "../components/charts";
 import { describeDrift, formatDate, formatDistance, formatDuration, formatPace } from "../format";
 import type { RunDetail as RunDetailType, Split } from "../types";
 import { useSlowNotice } from "../useSlowNotice";
@@ -93,9 +93,9 @@ export default function RunDetail() {
               <li>{describeDrift(run.pace_drift_s_per_km)}</li>
             </ul>
             <div className="charts">
-              <SplitChart title="Pace per split" labels={labels} values={run.splits.map((s) => s.pace_s_per_km)} format={formatDuration} lowerIsBetter />
+              <LineChart title="Pace per split" labels={labels} values={run.splits.map((s) => s.pace_s_per_km)} format={formatDuration} lowerIsBetter />
               {hasHr && (
-                <SplitChart title="Heart rate per split" labels={labels} values={run.splits.map((s) => s.avg_hr)} format={(v) => `${Math.round(v)} bpm`} />
+                <LineChart title="Heart rate per split" labels={labels} values={run.splits.map((s) => s.avg_hr)} format={(v) => `${Math.round(v)} bpm`} />
               )}
             </div>
           </section>
