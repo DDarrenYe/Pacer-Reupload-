@@ -2,11 +2,13 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 
 import { api } from "../api";
+import { useAuth } from "../auth";
 import { LineChart } from "../components/charts";
 import ManualRunForm from "../components/ManualRunForm";
 import { describeDrift, formatDate, formatDistance, formatDuration, formatPace } from "../format";
 import type { RunDetail as RunDetailType, Split } from "../types";
 import { useSlowNotice } from "../useSlowNotice";
+import { useTitle } from "../useTitle";
 
 const SPLIT_TYPE_TEXT = {
   negative: "Negative split: second half faster",
@@ -27,7 +29,10 @@ export default function RunDetail() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [editing, setEditing] = useState(false);
+  const { demo } = useAuth();
   const slow = useSlowNotice(run === null && !error);
+
+  useTitle(run ? (run.name ?? "Run") : "Run");
 
   useEffect(() => {
     api.getRun(id).then(setRun, (e: Error) => setError(e.message));
@@ -105,7 +110,7 @@ export default function RunDetail() {
       ) : run.splits.length === 0 ? (
         <section className="card">
           <p>This run was uploaded before analytics existed.</p>
-          <button onClick={reprocess} disabled={busy}>{busy ? "Working…" : "Calculate splits now"}</button>
+          {!demo && <button onClick={reprocess} disabled={busy}>{busy ? "Working…" : "Calculate splits now"}</button>}
         </section>
       ) : (
         <>
@@ -180,13 +185,13 @@ export default function RunDetail() {
         </>
       )}
 
-      <section className="actions">
+      {!demo && <section className="actions">
         {run.source === "manual" && !editing && (
           <button className="secondary" onClick={() => setEditing(true)} disabled={busy}>Edit run</button>
         )}
         {run.source !== "manual" && <button className="secondary" onClick={reprocess} disabled={busy}>Recalculate</button>}
         <button className="danger" onClick={remove} disabled={busy}>Delete run</button>
-      </section>
+      </section>}
     </main>
   );
 }

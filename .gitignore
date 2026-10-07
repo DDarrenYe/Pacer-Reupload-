@@ -11,3 +11,4 @@ dist/
 local.db
 .env.local
 .env.*.local
+.coverage

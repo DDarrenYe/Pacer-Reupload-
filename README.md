@@ -1,11 +1,37 @@
 # Pacer
 
-Pacer is a running analytics app. Upload a GPX or CSV run and get pace splits, fatigue trends and a predicted race time. It handles outdoor GPS runs and treadmill sessions with no GPS.
+[![CI](https://github.com/DDarrenYe/Pacer/actions/workflows/ci.yml/badge.svg?branch=dev%28Mac%29)](https://github.com/DDarrenYe/Pacer/actions/workflows/ci.yml)
+![Backend test coverage](https://img.shields.io/badge/backend%20coverage-96%25-brightgreen)
 
-- **Live app:** https://training-analytics-tool.vercel.app
-- **Live API:** https://run-analytics-api.onrender.com ([interactive docs](https://run-analytics-api.onrender.com/docs), [health check](https://run-analytics-api.onrender.com/health))
-  - It runs on Render's free tier, which sleeps when idle, so the first request can take 30–60 s.
-- **Status:** Weeks 1–5 of 6 are built. The app is live, with per-run analytics, a trends page and race-time prediction (Riegel, a personal exponent, and a pooled regression scored by MAE). Week 6 is polish and real users. See the [project plan](docs/PROJECT_PLAN.md), [model write-up](docs/MODEL.md) and [design decisions](docs/DECISIONS.md).
+Pacer is a running analytics app. Upload a GPX file (or enter a treadmill run by hand) and see your km splits, how much you fade, your best efforts, weekly trends and predicted race times.
+
+- **Try it:** https://training-analytics-tool.vercel.app (click **Try the demo** to look around with sample runs, no sign-up needed)
+- **API docs:** https://run-analytics-api.onrender.com/docs. It runs on Render's free tier, so the first request after a quiet spell can take up to a minute.
+- **Write-ups:** [design decisions and lessons](docs/DECISIONS.md) · [race-prediction model](docs/MODEL.md) · [project plan](docs/PROJECT_PLAN.md)
+
+| Run page | Trends and predictions |
+|---|---|
+| ![Run page with splits and charts](docs/screenshots/run.png) | ![Trends page with race predictions](docs/screenshots/trends.png) |
+
+## Architecture
+
+```mermaid
+flowchart LR
+  B[Browser] -->|pages| V[Vercel<br/>React + TypeScript]
+  B -->|log in| SA[Supabase Auth]
+  B -->|API calls + token| R[Render<br/>FastAPI]
+  R -->|verify token, JWKS| SA
+  R -->|runs, splits, best efforts| DB[(Supabase Postgres<br/>RLS on every table)]
+  R -->|original GPX files| ST[Supabase Storage<br/>private bucket]
+```
+
+- **All the work happens in the API.** The browser only logs in and draws charts, so every rule (who owns what, how splits are worked out) lives in one tested place.
+- **The database denies everything by default.** Row level security is on and has no policies, so Supabase's public REST API can't read anyone's runs; only the API can.
+- **Original files are kept**, so every run can be recalculated when the analysis improves. That has already happened once: a GPS-distance fix calibrated against Strava.
+- **The demo** uses short-lived read-only tokens signed by the API, not a shared password (see [DECISIONS](docs/DECISIONS.md#week-6-ready-for-real-users)).
+
+## Built with
+Python, FastAPI, SQLAlchemy, Alembic, pandas, NumPy, statsmodels, gpxpy · PostgreSQL (Supabase) · React, TypeScript, Vite, Chart.js · pytest, vitest, Playwright, ruff · GitHub Actions, Render, Vercel.
 
 ## API
 
@@ -24,6 +50,9 @@ Pacer is a running analytics app. Upload a GPX or CSV run and get pace splits, f
 | GET | `/trends?weeks=26` | ✔ | Weekly distance, average pace and predicted 5k |
 | GET | `/predictions` | ✔ | 5k, 10k, half and marathon predictions by three methods |
 | GET | `/predictions/evaluation` | ✔ | Accuracy of each method (MAE, time-ordered test; aggregate only) |
+| GET | `/account` / DELETE `/account` | ✔ | Your run count / delete your account and everything in it |
+| POST | `/feedback` | ✔ | Send the developer a note |
+| POST | `/demo/session` | – | A 2-hour read-only token for the demo account |
 | GET | `/health` | – | Liveness check |
 
 Authenticated routes need a Supabase access token: `Authorization: Bearer <token>`.
@@ -60,7 +89,7 @@ npm run dev                  # http://localhost:5173 (keep the API running too)
 `npm test` runs the unit tests, and `npm run build` checks types and builds.
 
 ### 4. Deploy to Render
-On Render, go to **New → Blueprint**, pick this repo and branch, and fill in `DATABASE_URL`, `SUPABASE_URL`, `SUPABASE_SECRET_KEY` and, for legacy projects only, `SUPABASE_JWT_SECRET`. `render.yaml` takes care of the rest, and migrations run automatically on every start. Set `CORS_ORIGINS` to the front end's address, for example `https://your-app.vercel.app,http://localhost:5173`.
+On Render, go to **New → Blueprint**, pick this repo and branch, and fill in `DATABASE_URL`, `SUPABASE_URL`, `SUPABASE_SECRET_KEY` and, for legacy projects only, `SUPABASE_JWT_SECRET`. `render.yaml` takes care of the rest, and migrations run automatically on every start. For the demo, set `DEMO_TOKEN_SECRET` to a long random string (`python -c "import secrets; print(secrets.token_urlsafe(48))"`) and run `python scripts/seed_demo.py` once against your database; it's safe to run again. Set `CORS_ORIGINS` to the front end's address, for example `https://your-app.vercel.app,http://localhost:5173`.
 
 ### 5. Deploy the front end to Vercel
 On Vercel, go to **Add New → Project**, import this repo, set **Root Directory** to `frontend`, and add the three `VITE_*` variables. Point `VITE_API_URL` at the Render URL. `vercel.json` sends every path to the app, so links like `/runs/<id>` work on refresh. In Supabase, go to **Authentication → URL Configuration** and set the Site URL to the Vercel address, so sign-up confirmation emails link back to the app.
@@ -68,7 +97,7 @@ On Vercel, go to **Add New → Project**, import this repo, set **Root Directory
 ## Tests and lint
 ```bash
 cd backend
-pytest -q                                   # SQLite in memory, fake storage
+pytest -q --cov=app                         # SQLite in memory, fake storage; CI requires 94%+ coverage
 TEST_DATABASE_URL=postgresql://... pytest   # optional: run against Postgres
 ruff check . && ruff format --check .
 ```

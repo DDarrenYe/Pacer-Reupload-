@@ -6,6 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.analytics.predict import Effort, RunVolume
+from app.config import get_settings
 from app.models import BestEffort, Run
 
 MIN_SHARE_OF_RUN = 0.75
@@ -36,6 +37,9 @@ def load_efforts(db: Session, user_id: uuid.UUID | None = None) -> list[Effort]:
     if user_id is not None:
         best = best.where(Run.user_id == user_id)
         races = races.where(Run.user_id == user_id)
+    else:  # pooled data: the demo's synthetic runs must never shape real predictions
+        best = best.where(Run.user_id != _demo_id())
+        races = races.where(Run.user_id != _demo_id())
 
     efforts = [
         Effort(str(u), str(r), started.date(), dist, secs, surface, is_race=False)
@@ -52,4 +56,10 @@ def load_volumes(db: Session, user_id: uuid.UUID | None = None) -> list[RunVolum
     query = select(Run.user_id, Run.started_at, Run.distance_m)
     if user_id is not None:
         query = query.where(Run.user_id == user_id)
+    else:
+        query = query.where(Run.user_id != _demo_id())
     return [RunVolume(str(u), started.date(), dist) for u, started, dist in db.execute(query)]
+
+
+def _demo_id() -> uuid.UUID:
+    return uuid.UUID(get_settings().demo_user_id)

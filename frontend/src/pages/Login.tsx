@@ -1,13 +1,17 @@
 import { useState, type FormEvent } from "react";
-import { Navigate, useLocation } from "react-router-dom";
+import { Link, Navigate, useLocation, useSearchParams } from "react-router-dom";
 
 import { useAuth } from "../auth";
+import DemoButton from "../components/DemoButton";
+import { useTitle } from "../useTitle";
 import { supabase } from "../supabase";
 
 export default function Login() {
   const { session } = useAuth();
   const location = useLocation();
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
+  const [params] = useSearchParams();
+  const [mode, setMode] = useState<"signin" | "signup">(params.get("mode") === "signup" ? "signup" : "signin");
+  useTitle(mode === "signin" ? "Sign in" : "Create an account");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
@@ -34,7 +38,7 @@ export default function Login() {
 
   return (
     <main className="narrow">
-      <h1>Pacer</h1>
+      <h1><Link to="/welcome" className="brand-link">Pacer</Link></h1>
       <p className="muted">Upload your runs and see splits, pace drift and best efforts.</p>
       <form className="card stack" onSubmit={submit}>
         <h2>{mode === "signin" ? "Sign in" : "Create an account"}</h2>
@@ -68,6 +72,10 @@ export default function Login() {
           {mode === "signin" ? "New here? Create an account" : "Already have an account? Sign in"}
         </button>
       </form>
+      <div className="stack center">
+        <p className="muted">Just looking?</p>
+        <DemoButton />
+      </div>
     </main>
   );
 }

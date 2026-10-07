@@ -4,6 +4,29 @@ This file records why the project is built the way it is: the choices I made, wh
 
 ---
 
+## Week 6: ready for real users
+
+### A demo without a shared password
+- **Decision:** "Try the demo" calls `POST /demo/session`, and the API signs a **2-hour, read-only** token itself (HS256, its own secret, audience `pacer-demo`, for one fixed demo user id). Every write route refuses that user with a 403.
+- **Why not a shared Supabase demo login?** Its password would have to sit in the public front end, and anyone could use it to change the password, or the email, and lock everyone else out. A token the API signs can't be turned into anything more.
+- **Detail:** The token's audience is read first, without trusting it, only to choose which key to verify with. Then it's verified properly. Forged, expired and wrong-user demo tokens are all tested.
+- **The demo can't pollute the model:** its synthetic runs are excluded from the pooled prediction model and its evaluation.
+- **Seeding** (`scripts/seed_demo.py`) goes through the real upload code, so the demo shows exactly what users get. The first version made every run perfectly even-paced, so every run said "even split". Long runs now fade and tempo runs build, like real ones.
+
+### Deleting an account deletes everything
+- **Decision:** `DELETE /account` removes runs (splits and best efforts cascade), the original files in storage, feedback, and finally the Supabase login through the Admin API. If a file can't be deleted, the rows still go and the orphan is logged. If removing the login fails, the user is told that their data is gone but the login isn't.
+- **Why:** You can't ask people to upload GPS traces of where they run without letting them take it all back. The UI asks you to type DELETE first.
+
+### Feedback, errors and the first-visit experience
+- A feedback table (RLS on) that testers write to from a form. I read it in the Supabase dashboard.
+- A catch-all 500 handler logs the full error but tells the browser only "Something went wrong on our side." A React error boundary does the same on the front end, so a crash never shows a blank page.
+- Signed-out visitors land on a welcome page that explains how to export a GPX from Strava or Garmin, instead of a bare login form.
+
+### A coverage floor in CI
+- Backend coverage is 96%. CI fails below 94%, so the badge can't quietly go stale.
+
+---
+
 ## Week 5: trends and race prediction
 Full write-up: [`MODEL.md`](MODEL.md).
 

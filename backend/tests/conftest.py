@@ -14,9 +14,11 @@ from app.config import get_settings
 from app.db import Base, get_db, normalize_url
 from app.main import app
 from app.storage import get_storage
+from app.supabase_admin import get_admin
 
 DATA = Path(__file__).parent / "data"
 JWT_SECRET = "test-secret-at-least-32-bytes-long!!"
+DEMO_SECRET = "demo-test-secret-at-least-32-bytes!!"
 
 
 @pytest.fixture
@@ -44,6 +46,7 @@ def test_settings(monkeypatch):
     monkeypatch.setenv("SUPABASE_JWT_SECRET", JWT_SECRET)
     monkeypatch.setenv("SUPABASE_URL", "")
     monkeypatch.setenv("SUPABASE_SECRET_KEY", "")
+    monkeypatch.setenv("DEMO_TOKEN_SECRET", DEMO_SECRET)
     get_settings.cache_clear()
     yield
     get_settings.cache_clear()
@@ -66,19 +69,33 @@ def db_session_factory():
     engine.dispose()
 
 
+class FakeAdmin:
+    def __init__(self):
+        self.deleted: list = []
+
+    def delete_user(self, user_id) -> None:
+        self.deleted.append(user_id)
+
+
+@pytest.fixture
+def admin() -> FakeAdmin:
+    return FakeAdmin()
+
+
 @pytest.fixture
 def storage() -> FakeStorage:
     return FakeStorage()
 
 
 @pytest.fixture
-def client(db_session_factory, storage):
+def client(db_session_factory, storage, admin):
     def override_db():
         with db_session_factory() as session:
             yield session
 
     app.dependency_overrides[get_db] = override_db
     app.dependency_overrides[get_storage] = lambda: storage
+    app.dependency_overrides[get_admin] = lambda: admin
     yield TestClient(app)
     app.dependency_overrides.clear()
 

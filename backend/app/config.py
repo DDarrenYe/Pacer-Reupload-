@@ -19,6 +19,10 @@ class Settings(BaseSettings):
     # Newer projects use asymmetric keys, which are fetched from the JWKS endpoint.
     supabase_jwt_secret: str = ""
     storage_bucket: str = "raw-uploads"
+    # Demo mode: the API signs its own short-lived, read-only tokens for this user id.
+    # Leave the secret empty to switch the demo off.
+    demo_token_secret: str = ""
+    demo_user_id: str = "00000000-0000-4000-8000-00000000de30"
     # Comma-separated origins allowed to call the API from a browser (the front end).
     cors_origins: str = "http://localhost:5173"
 

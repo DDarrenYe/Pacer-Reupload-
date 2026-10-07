@@ -103,3 +103,42 @@ def test_storage_not_configured():
 )
 def test_supabase_url_is_normalised(pasted):
     assert Settings(supabase_url=pasted).supabase_url == "https://abc.supabase.co"
+
+
+def test_admin_delete_user_request(monkeypatch):
+    from app.supabase_admin import SupabaseAdmin
+
+    calls = []
+
+    def fake_delete(url, **kwargs):
+        calls.append((url, kwargs["headers"]["apikey"]))
+        return httpx.Response(200, request=httpx.Request("DELETE", url))
+
+    monkeypatch.setattr(httpx, "delete", fake_delete)
+    uid = uuid.uuid4()
+    SupabaseAdmin("https://abc.supabase.co/", "secret").delete_user(uid)
+    assert calls == [(f"https://abc.supabase.co/auth/v1/admin/users/{uid}", "secret")]
+
+
+@pytest.mark.parametrize("status", [404, 500])
+def test_admin_delete_user_errors(monkeypatch, status):
+    from app.supabase_admin import AdminError, SupabaseAdmin
+
+    monkeypatch.setattr(
+        httpx,
+        "delete",
+        lambda url, **kw: httpx.Response(status, request=httpx.Request("DELETE", url)),
+    )
+    admin = SupabaseAdmin("https://abc.supabase.co", "k")
+    if status == 404:
+        admin.delete_user(uuid.uuid4())  # already gone is fine
+    else:
+        with pytest.raises(AdminError):
+            admin.delete_user(uuid.uuid4())
+
+
+def test_admin_not_configured():
+    from app.supabase_admin import AdminError, get_admin
+
+    with pytest.raises(AdminError):
+        get_admin()

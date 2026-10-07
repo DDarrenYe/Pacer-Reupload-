@@ -1,3 +1,4 @@
+import { demoToken, saveDemo } from "./demo";
 import { supabase } from "./supabase";
 import type {
   Evaluation,
@@ -45,7 +46,8 @@ export function errorMessage(detail: unknown): string | null {
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   // getSession refreshes the access token when it's close to expiring.
   const { data } = await supabase.auth.getSession();
-  const token = data.session?.access_token;
+  // A real login wins; otherwise use the read-only demo token if there is one.
+  const token = data.session?.access_token ?? demoToken();
   const res = await fetch(`${API_URL}${path}`, {
     ...init,
     headers: { ...init.headers, ...(token ? { Authorization: `Bearer ${token}` } : {}) },
@@ -60,7 +62,26 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   return body as T;
 }
 
+export interface Account {
+  run_count: number;
+  is_demo: boolean;
+}
+
 export const api = {
+  startDemo: async () => {
+    const res = await fetch(`${API_URL}/demo/session`, { method: "POST" });
+    const body = await res.json().catch(() => null);
+    if (!res.ok) throw new ApiError(res.status, errorMessage(body?.detail) ?? "The demo isn't available right now.");
+    saveDemo(body.access_token, body.expires_in);
+  },
+  account: () => request<Account>("/account"),
+  deleteAccount: () => request<void>("/account", { method: "DELETE" }),
+  sendFeedback: (message: string, page: string) =>
+    request<{ ok: boolean }>("/feedback", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message, page }),
+    }),
   listRuns: () => request<Run[]>("/runs"),
   predictions: () => request<RunnerPredictions>("/predictions"),
   evaluation: () => request<Evaluation>("/predictions/evaluation"),

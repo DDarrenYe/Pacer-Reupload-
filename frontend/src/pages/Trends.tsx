@@ -5,6 +5,7 @@ import { BarChart, LineChart } from "../components/charts";
 import { describeExponent, formatDuration, formatShortDate } from "../format";
 import type { Evaluation, LoadDay, RunnerPredictions, Week } from "../types";
 import { useSlowNotice } from "../useSlowNotice";
+import { useTitle } from "../useTitle";
 
 interface Data {
   predictions: RunnerPredictions;
@@ -16,6 +17,7 @@ interface Data {
 const time = (s: number | null) => (s === null ? "–" : formatDuration(s));
 
 export default function Trends() {
+  useTitle("Trends");
   const [data, setData] = useState<Data | null>(null);
   const [error, setError] = useState<string | null>(null);
   const slow = useSlowNotice(data === null && !error);

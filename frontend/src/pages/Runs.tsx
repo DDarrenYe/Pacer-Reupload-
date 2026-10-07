@@ -2,16 +2,20 @@ import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 import { api } from "../api";
+import { useAuth } from "../auth";
 import ManualRunForm from "../components/ManualRunForm";
 import UploadForm from "../components/UploadForm";
 import { formatDate, formatDistance, formatDuration, formatPace } from "../format";
 import type { Run } from "../types";
 import { useSlowNotice } from "../useSlowNotice";
+import { useTitle } from "../useTitle";
 
 export default function Runs() {
   const [runs, setRuns] = useState<Run[] | null>(null);
   const [mode, setMode] = useState<"file" | "manual">("file");
   const navigate = useNavigate();
+  const { demo } = useAuth();
+  useTitle("Runs");
   const [error, setError] = useState<string | null>(null);
   const [recalc, setRecalc] = useState<{ busy: boolean; message: string | null }>({ busy: false, message: null });
   const slow = useSlowNotice(runs === null && !error);
@@ -36,7 +40,7 @@ export default function Runs() {
 
   return (
     <main>
-      <section className="card stack">
+      {!demo && <section className="card stack">
         <div className="tabs" role="tablist" aria-label="Add a run">
           <button role="tab" aria-selected={mode === "file"} className={mode === "file" ? "tab active" : "tab"} onClick={() => setMode("file")}>
             Upload a file
@@ -46,14 +50,19 @@ export default function Runs() {
           </button>
         </div>
         {mode === "file" ? <UploadForm onUploaded={load} /> : <ManualRunForm onSaved={(run) => navigate(`/runs/${run.id}`)} />}
-      </section>
+      </section>}
       <section className="card">
         <h2>Your runs</h2>
         {error && <p className="error">{error}</p>}
         {runs === null && !error && (
           <p className="muted">{slow ? "Waking up the server; this can take up to a minute…" : "Loading…"}</p>
         )}
-        {runs?.length === 0 && <p className="muted">No runs yet. Upload one above.</p>}
+        {runs?.length === 0 && (
+          <p className="muted">
+            No runs yet. Upload a GPX above, or enter a treadmill run manually.{" "}
+            <Link to="/welcome#export">How to get your runs out of Strava or Garmin</Link>
+          </p>
+        )}
         {recalc.message && <p className="info" role="status">{recalc.message}</p>}
         {runs && runs.length > 0 && (
           <div className="table-scroll">
@@ -87,7 +96,7 @@ export default function Runs() {
             </table>
           </div>
         )}
-        {runs && runs.length > 0 && (
+        {runs && runs.length > 0 && !demo && (
           <div className="actions" style={{ marginTop: 12 }}>
             <button className="secondary" onClick={recalculateAll} disabled={recalc.busy}>
               {recalc.busy ? "Recalculating…" : "Recalculate all runs"}

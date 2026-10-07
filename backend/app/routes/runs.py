@@ -12,7 +12,7 @@ from app.analytics.best_efforts import compute_best_efforts
 from app.analytics.fatigue import pace_drift
 from app.analytics.series import RunSeries
 from app.analytics.splits import compute_splits, fastest_and_slowest, split_type
-from app.auth import CurrentUserId
+from app.auth import CurrentUserId, WritableUserId
 from app.db import DbSession
 from app.models import BestEffort, Run, Split
 from app.routes.files import CONTENT_TYPES, parse_file, read_upload
@@ -29,7 +29,7 @@ SPLIT_LENGTH_M = {"track": 400.0}
 @router.post("", response_model=RunDetail, status_code=201)
 def create_run(
     file: UploadFile,
-    user_id: CurrentUserId,
+    user_id: WritableUserId,
     db: DbSession,
     storage: StorageDep,
     surface: Annotated[Literal["road", "track", "treadmill"] | None, Form()] = None,
@@ -82,7 +82,7 @@ def create_run(
 
 
 @router.post("/manual", response_model=RunDetail, status_code=201)
-def create_manual_run(body: ManualRunIn, user_id: CurrentUserId, db: DbSession) -> Run:
+def create_manual_run(body: ManualRunIn, user_id: WritableUserId, db: DbSession) -> Run:
     """Enter a run by hand (distance and time); pace is calculated from them.
 
     Manual runs count towards weekly distance, trends and training load, and a manual
@@ -98,7 +98,7 @@ def create_manual_run(body: ManualRunIn, user_id: CurrentUserId, db: DbSession) 
 
 @router.put("/{run_id}/manual", response_model=RunDetail)
 def update_manual_run(
-    run_id: uuid.UUID, body: ManualRunIn, user_id: CurrentUserId, db: DbSession
+    run_id: uuid.UUID, body: ManualRunIn, user_id: WritableUserId, db: DbSession
 ) -> Run:
     """Edit a manually entered run. Pace is recalculated from the new distance and time.
 
@@ -126,7 +126,7 @@ def _apply_manual(run: Run, body: ManualRunIn) -> None:
 
 
 @router.post("/reprocess-all")
-def reprocess_all_runs(user_id: CurrentUserId, db: DbSession, storage: StorageDep) -> dict:
+def reprocess_all_runs(user_id: WritableUserId, db: DbSession, storage: StorageDep) -> dict:
     """Recalculate every one of your runs from its stored file (after a parser fix)."""
     # Manual entries have no file and nothing to recalculate.
     runs = db.scalars(
@@ -165,7 +165,7 @@ def get_run(
 @router.post("/{run_id}/reprocess", response_model=RunDetail)
 def reprocess_run(
     run_id: uuid.UUID,
-    user_id: CurrentUserId,
+    user_id: WritableUserId,
     db: DbSession,
     storage: StorageDep,
 ) -> Run:
@@ -191,7 +191,7 @@ def _reprocess(run: Run, storage: Storage) -> None:
 @router.delete("/{run_id}", status_code=204)
 def delete_run(
     run_id: uuid.UUID,
-    user_id: CurrentUserId,
+    user_id: WritableUserId,
     db: DbSession,
     storage: StorageDep,
 ) -> Response:
