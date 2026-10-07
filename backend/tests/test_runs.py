@@ -371,3 +371,50 @@ def test_manual_races_count_for_prediction(client):
 def test_two_manual_runs_do_not_clash_as_duplicates(client):
     assert _manual(client).status_code == 201
     assert _manual(client).status_code == 201
+
+
+def test_edit_manual_run(client):
+    run_id = _manual(client, name="Treadmill").json()["id"]
+    r = client.put(
+        f"/runs/{run_id}/manual",
+        json={
+            "distance_km": 6,
+            "duration_s": 1800,
+            "started_at": "2026-10-05T07:00:00Z",
+            "surface": "road",
+            "is_race": True,
+            "avg_hr": 160,
+        },
+        headers=auth(ALICE),
+    )
+    assert r.status_code == 200, r.text
+    run = r.json()
+    assert run["distance_m"] == 6000
+    assert run["avg_pace_s_per_km"] == 300  # recalculated: 30:00 over 6 km
+    assert run["surface"] == "road" and run["is_race"] is True and run["avg_hr"] == 160
+    assert run["name"] == "6 km road run"  # blank name gets the default again
+    assert run["started_at"].startswith("2026-10-05T07:00")
+    assert client.get(f"/runs/{run_id}", headers=auth(ALICE)).json()["moving_time_s"] == 1800
+
+
+def test_edit_manual_run_rules(client, data_dir):
+    run_id = _manual(client).json()["id"]
+    body = {"distance_km": 5, "duration_s": 1500, "started_at": "2026-10-05T07:00:00Z"}
+    # someone else's run, a typo, and an uploaded (file) run
+    assert client.put(f"/runs/{run_id}/manual", json=body, headers=auth(BOB)).status_code == 404
+    bad = {**body, "duration_s": 60}  # 5 km in a minute
+    assert client.put(f"/runs/{run_id}/manual", json=bad, headers=auth(ALICE)).status_code == 422
+    gpx_id = upload(client, data_dir).json()["id"]
+    assert client.put(f"/runs/{gpx_id}/manual", json=body, headers=auth(ALICE)).status_code == 409
+
+
+def test_cors_allows_put_for_edits():
+    from fastapi.testclient import TestClient
+
+    from app.main import app
+
+    r = TestClient(app).options(
+        "/runs/x/manual",
+        headers={"Origin": "http://localhost:5173", "Access-Control-Request-Method": "PUT"},
+    )
+    assert "PUT" in r.headers["access-control-allow-methods"]

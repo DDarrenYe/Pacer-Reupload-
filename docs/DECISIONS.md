@@ -10,6 +10,7 @@ Full write-up: [`MODEL.md`](MODEL.md).
 ### Manual entry for runs without a watch
 - **Decision:** `POST /runs/manual` takes distance, time and date (plus optional surface, heart rate, name and race flag) and works out the pace. Migration `0003` makes the file columns nullable, and the duplicate-upload constraint still works because NULL hashes don't clash.
 - **Why no splits or best efforts:** with only a total, any per-km breakdown would be invented, and it would show as a perfectly "even split". Manual runs still feed weekly distance, training load and (if marked as a race) prediction, where a race's whole distance and time is a real data point.
+- **Editing:** `PUT /runs/{id}/manual` replaces a manual run's details and recalculates its pace. Uploaded runs can't be edited this way, because their numbers come from the file (the fix there is Recalculate). An automatic name like "5 km treadmill run" follows the new distance; a name you typed yourself is kept.
 - **Typos:** a pace faster than 1:30/km or slower than 30:00/km is rejected with a plain message. The app also had to learn to show FastAPI's validation errors, which arrive as a list rather than a string; until then the browser test only showed "Request failed (422)".
 
 ### Choosing which runs count was harder than the maths

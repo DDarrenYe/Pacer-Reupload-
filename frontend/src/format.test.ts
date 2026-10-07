@@ -6,7 +6,9 @@ import {
   formatDistance,
   formatDuration,
   formatPace,
+  defaultManualName,
   paceFrom,
+  splitDuration,
   toSeconds,
 } from "./format";
 
@@ -52,5 +54,17 @@ describe("manual entry helpers", () => {
     expect(paceFrom(0, 1650)).toBeNull();
     expect(paceFrom(5, 0)).toBeNull();
     expect(paceFrom(Number.NaN, 100)).toBeNull();
+  });
+});
+
+describe("editing helpers", () => {
+  it("splits a duration for the form", () => {
+    expect(splitDuration(3725)).toEqual(["1", "2", "05"]);
+    expect(splitDuration(1650)).toEqual(["", "27", "30"]);
+  });
+  it("matches the server's default name", () => {
+    expect(defaultManualName(5, "treadmill")).toBe("5 km treadmill run");
+    expect(defaultManualName(6.4, "road")).toBe("6.4 km road run");
+    expect(defaultManualName(21.0975, "road")).toBe("21.0975 km road run");
   });
 });

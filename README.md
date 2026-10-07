@@ -16,6 +16,7 @@ Pacer is a running analytics app. Upload a GPX or CSV run and get pace splits, f
 | GET | `/runs` | ✔ | Your runs, newest first |
 | GET | `/runs/{id}` | ✔ | One of your runs, with splits and best efforts |
 | POST | `/runs/manual` | ✔ | Enter a run by hand (distance, time, date); pace is calculated |
+| PUT | `/runs/{id}/manual` | ✔ | Edit a manual run (uploaded runs come from their file and can't be edited) |
 | POST | `/runs/reprocess-all` | ✔ | Recalculate all your uploaded runs |
 | POST | `/runs/{id}/reprocess` | ✔ | Redo parsing and analytics from the stored original file |
 | DELETE | `/runs/{id}` | ✔ | Delete a run and its stored file |

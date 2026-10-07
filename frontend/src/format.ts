@@ -60,3 +60,16 @@ export function paceFrom(distanceKm: number, seconds: number): number | null {
   if (!(distanceKm > 0) || !(seconds > 0) || !Number.isFinite(distanceKm) || !Number.isFinite(seconds)) return null;
   return seconds / distanceKm;
 }
+
+/** The name the server gives a manual run when you leave the name blank. */
+export function defaultManualName(distanceKm: number, surface: string): string {
+  // Same as the server's f"{distance_km:g}": up to 6 significant digits.
+  return `${Number(distanceKm.toPrecision(6))} km ${surface} run`;
+}
+
+/** Total seconds -> ["h", "mm", "ss"] strings for the time fields (blank hours if under an hour). */
+export function splitDuration(totalSeconds: number): [string, string, string] {
+  const t = Math.round(totalSeconds);
+  const h = Math.floor(t / 3600);
+  return [h ? String(h) : "", String(Math.floor((t % 3600) / 60)), String(t % 60).padStart(2, "0")];
+}

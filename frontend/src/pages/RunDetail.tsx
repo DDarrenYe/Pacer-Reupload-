@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 
 import { api } from "../api";
 import { LineChart } from "../components/charts";
+import ManualRunForm from "../components/ManualRunForm";
 import { describeDrift, formatDate, formatDistance, formatDuration, formatPace } from "../format";
 import type { RunDetail as RunDetailType, Split } from "../types";
 import { useSlowNotice } from "../useSlowNotice";
@@ -25,6 +26,7 @@ export default function RunDetail() {
   const [run, setRun] = useState<RunDetailType | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [editing, setEditing] = useState(false);
   const slow = useSlowNotice(run === null && !error);
 
   useEffect(() => {
@@ -80,7 +82,19 @@ export default function RunDetail() {
         <Tile label="Elevation gain" value={run.elevation_gain_m !== null ? `${Math.round(run.elevation_gain_m)} m` : "–"} />
       </section>
 
-      {run.source === "manual" ? (
+      {editing ? (
+        <section className="card">
+          <h2>Edit run</h2>
+          <ManualRunForm
+            run={run}
+            onSaved={(updated) => {
+              setRun(updated);
+              setEditing(false);
+            }}
+            onCancel={() => setEditing(false)}
+          />
+        </section>
+      ) : run.source === "manual" ? (
         <section className="card">
           <p className="muted" style={{ margin: 0 }}>
             Entered manually, so there are no splits or best efforts: with only a total distance and time, a per-km
@@ -167,6 +181,9 @@ export default function RunDetail() {
       )}
 
       <section className="actions">
+        {run.source === "manual" && !editing && (
+          <button className="secondary" onClick={() => setEditing(true)} disabled={busy}>Edit run</button>
+        )}
         {run.source !== "manual" && <button className="secondary" onClick={reprocess} disabled={busy}>Recalculate</button>}
         <button className="danger" onClick={remove} disabled={busy}>Delete run</button>
       </section>

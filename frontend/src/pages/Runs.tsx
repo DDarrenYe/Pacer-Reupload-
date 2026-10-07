@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 import { api } from "../api";
 import ManualRunForm from "../components/ManualRunForm";
@@ -11,6 +11,7 @@ import { useSlowNotice } from "../useSlowNotice";
 export default function Runs() {
   const [runs, setRuns] = useState<Run[] | null>(null);
   const [mode, setMode] = useState<"file" | "manual">("file");
+  const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
   const [recalc, setRecalc] = useState<{ busy: boolean; message: string | null }>({ busy: false, message: null });
   const slow = useSlowNotice(runs === null && !error);
@@ -44,7 +45,7 @@ export default function Runs() {
             Enter manually
           </button>
         </div>
-        {mode === "file" ? <UploadForm onUploaded={load} /> : <ManualRunForm onSaved={load} />}
+        {mode === "file" ? <UploadForm onUploaded={load} /> : <ManualRunForm onSaved={(run) => navigate(`/runs/${run.id}`)} />}
       </section>
       <section className="card">
         <h2>Your runs</h2>

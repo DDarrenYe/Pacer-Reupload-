@@ -21,6 +21,16 @@ export class ApiError extends Error {
   }
 }
 
+export interface ManualRunInput {
+  distance_km: number;
+  duration_s: number;
+  started_at: string;
+  surface: Surface;
+  name?: string;
+  is_race: boolean;
+  avg_hr?: number;
+}
+
 /** FastAPI errors come as a string, {message}, or a list of validation errors. */
 export function errorMessage(detail: unknown): string | null {
   if (typeof detail === "string") return detail;
@@ -61,17 +71,15 @@ export const api = {
   reprocessAll: () =>
     request<{ reprocessed: number; failed: number }>("/runs/reprocess-all", { method: "POST" }),
   deleteRun: (id: string) => request<void>(`/runs/${id}`, { method: "DELETE" }),
-  createManualRun: (input: {
-    distance_km: number;
-    duration_s: number;
-    started_at: string;
-    surface: Surface;
-    name?: string;
-    is_race: boolean;
-    avg_hr?: number;
-  }) =>
+  createManualRun: (input: ManualRunInput) =>
     request<RunDetail>("/runs/manual", {
       method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    }),
+  updateManualRun: (id: string, input: ManualRunInput) =>
+    request<RunDetail>(`/runs/${id}/manual`, {
+      method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(input),
     }),

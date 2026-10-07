@@ -89,27 +89,40 @@ def create_manual_run(body: ManualRunIn, user_id: CurrentUserId, db: DbSession) 
     race counts for race prediction. They get no splits or best efforts: with only a
     total distance and time, any per-km breakdown would be made up.
     """
-    distance_m = body.distance_km * 1000
-    run = Run(
-        user_id=user_id,
-        name=body.name or f"{body.distance_km:g} km {body.surface} run",
-        started_at=body.started_at,
-        source="manual",
-        surface=body.surface,
-        distance_m=round(distance_m, 1),
-        elapsed_s=body.duration_s,
-        moving_time_s=body.duration_s,
-        avg_pace_s_per_km=round(body.duration_s / body.distance_km, 1),
-        elevation_gain_m=None,
-        avg_hr=body.avg_hr,
-        is_race=body.is_race,
-        notes=body.notes,
-        raw_file_key=None,
-        file_hash=None,
-    )
+    run = Run(user_id=user_id, source="manual", raw_file_key=None, file_hash=None)
+    _apply_manual(run, body)
     db.add(run)
     db.commit()
     return run
+
+
+@router.put("/{run_id}/manual", response_model=RunDetail)
+def update_manual_run(
+    run_id: uuid.UUID, body: ManualRunIn, user_id: CurrentUserId, db: DbSession
+) -> Run:
+    """Edit a manually entered run. Pace is recalculated from the new distance and time.
+
+    Uploaded runs can't be edited this way: their numbers come from the file.
+    """
+    run = _get_own_run(db, run_id, user_id)
+    if run.source != "manual":
+        raise HTTPException(409, "Only manually entered runs can be edited.")
+    _apply_manual(run, body)
+    db.commit()
+    return run
+
+
+def _apply_manual(run: Run, body: ManualRunIn) -> None:
+    run.name = body.name or f"{body.distance_km:g} km {body.surface} run"
+    run.started_at = body.started_at
+    run.surface = body.surface
+    run.distance_m = round(body.distance_km * 1000, 1)
+    run.elapsed_s = run.moving_time_s = body.duration_s
+    run.avg_pace_s_per_km = round(body.duration_s / body.distance_km, 1)
+    run.elevation_gain_m = None
+    run.avg_hr = body.avg_hr
+    run.is_race = body.is_race
+    run.notes = body.notes
 
 
 @router.post("/reprocess-all")
