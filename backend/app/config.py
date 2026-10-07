@@ -1,5 +1,6 @@
 from functools import lru_cache
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -18,6 +19,14 @@ class Settings(BaseSettings):
     # Newer projects use asymmetric keys, which are fetched from the JWKS endpoint.
     supabase_jwt_secret: str = ""
     storage_bucket: str = "raw-uploads"
+
+    @field_validator("supabase_url")
+    @classmethod
+    def _base_url_only(cls, url: str) -> str:
+        # Supabase's Data API page shows the URL with /rest/v1 on the end. Auth and
+        # Storage live beside it, not under it, so keep just https://<ref>.supabase.co.
+        url = url.strip().rstrip("/")
+        return url.removesuffix("/rest/v1")
 
 
 @lru_cache

@@ -9,7 +9,7 @@ from fastapi import HTTPException
 from fastapi.security import HTTPAuthorizationCredentials
 
 from app import auth
-from app.config import get_settings
+from app.config import Settings, get_settings
 from app.storage import StorageError, SupabaseStorage, get_storage
 
 
@@ -87,3 +87,17 @@ def test_storage_unreachable():
 def test_storage_not_configured():
     with pytest.raises(StorageError):
         get_storage()
+
+
+@pytest.mark.parametrize(
+    "pasted",
+    [
+        "https://abc.supabase.co",
+        "https://abc.supabase.co/",
+        "https://abc.supabase.co/rest/v1",
+        "https://abc.supabase.co/rest/v1/",
+        "  https://abc.supabase.co/rest/v1/  ",
+    ],
+)
+def test_supabase_url_is_normalised(pasted):
+    assert Settings(supabase_url=pasted).supabase_url == "https://abc.supabase.co"

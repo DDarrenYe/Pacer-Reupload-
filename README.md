@@ -27,14 +27,17 @@ Authenticated routes need a Supabase access token: `Authorization: Bearer <token
 4. **Test user:** under **Authentication → Users → Add user**, create one with an email and password.
 
 ### 2. Run locally
+Keep the project somewhere iCloud doesn't sync, such as `~/Projects`, not Desktop or Documents. iCloud can offload files, which makes Python time out while importing.
 ```bash
 cd backend
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements-dev.txt
 cp .env.example .env        # then fill in the values from step 1
 alembic upgrade head        # creates the tables in Supabase
-uvicorn app.main:app --reload
+uvicorn app.main:app --reload --reload-dir app
 ```
+The server keeps that Terminal tab busy, so run other commands in a second tab (**Cmd + T**). Activate `.venv` in the new tab first.
+
 Get a token with `python scripts/get_token.py`. Then open http://localhost:8000/docs, click **Authorize**, paste the token, and try `POST /runs`. Tokens last about an hour.
 
 ### 3. Deploy to Render

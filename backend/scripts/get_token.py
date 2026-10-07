@@ -33,7 +33,13 @@ def main() -> None:
     )
     if r.is_error:
         sys.exit(f"Login failed ({r.status_code}): {r.text}")
-    print(r.json()["access_token"])
+    try:
+        print(r.json()["access_token"])
+    except (ValueError, KeyError):
+        sys.exit(
+            f"Unexpected response ({r.status_code}): {r.text[:300]}\n"
+            "Check that SUPABASE_URL in .env is just https://<project>.supabase.co"
+        )
 
 
 if __name__ == "__main__":
