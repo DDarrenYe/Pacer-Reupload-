@@ -9,9 +9,9 @@ Pacer is a running analytics app. Upload a GPX file (or enter a treadmill run by
 - **API docs:** https://run-analytics-api.onrender.com/docs. It runs on Render's free tier, so the first request after a quiet spell can take up to a minute.
 - **Write-ups:** [design decisions and lessons](docs/DECISIONS.md) · [race-prediction model](docs/MODEL.md) · [project plan](docs/PROJECT_PLAN.md)
 
-| Run page | Trends and predictions |
-|---|---|
-| ![Run page with splits and charts](docs/screenshots/run.png) | ![Trends page with race predictions](docs/screenshots/trends.png) |
+| Run page | Trends and predictions | Race goals |
+|---|---|---|
+| ![Run page with splits and charts](docs/screenshots/run.png) | ![Trends page with race predictions](docs/screenshots/trends.png) | ![Goals page with a half-marathon target, trend chart and suggestions](docs/screenshots/goals.png) |
 
 ## Built with
 Python, FastAPI, SQLAlchemy, Alembic, pandas, NumPy, statsmodels, gpxpy · PostgreSQL (Supabase) · React, TypeScript, Vite, Chart.js · pytest, vitest, Playwright, ruff · GitHub Actions, Render, Vercel.
@@ -100,6 +100,18 @@ CI runs lint, applies the migrations to a real Postgres 16, checks they match th
 | Race prediction | Riegel (1.06), your own fitted exponent, and a pooled regression on all runners. Only hard efforts count. See [docs/MODEL.md](docs/MODEL.md). |
 | Goals | Predicted time now, a clamped 12-week trend projected to race day, a status (already there, on track, within reach, stretch), equivalent checkpoint times and rule-based suggestions. See [docs/MODEL.md](docs/MODEL.md#goals). |
 | Heart rate | Read from Garmin-style GPX extensions (Strava and Garmin exports) or a CSV `avg_hr` column, and time-weighted. |
+
+## Goals
+
+Add a race on the **Goals** tab: pick a distance (5k, 10k, half, marathon or any distance), a target time and the race date. Each goal gets a card showing:
+
+- **Target, predicted now, and projected on race day**, with how far each is from your target.
+- **A status in words:** Already there, On track (your trend gets you there), Within reach (needs up to 0.5% improvement a week) or Stretch.
+- **A chart of your predicted race time over the last 12 weeks**, with your target as a dashed line.
+- **Checkpoint times:** a 5k and 10k that match the goal, so you can test yourself before race day.
+- **What to do:** suggestions for weekly distance, long run, goal-pace practice, training load and taper. Each one quotes the number behind it, e.g. "you've averaged 18 km a week; build towards 30 km".
+
+The projection carries your recent trend forward, but at no more than 1% faster or 0.5% slower a week. With less than 3 weeks of changing predictions, it says there isn't enough history instead of guessing. After race day, a run of about that distance within a day of the date is taken as your result. The thresholds are in [docs/MODEL.md](docs/MODEL.md#goals) and the reasoning is in [docs/DECISIONS.md](docs/DECISIONS.md#after-launch-race-goals).
 
 ## Supported files
 
