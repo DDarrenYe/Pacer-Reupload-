@@ -7,7 +7,7 @@ Pacer is a running analytics app. Upload a GPX file (or enter a treadmill run by
 
 - **Try it:** https://training-analytics-tool.vercel.app (click **Try the demo** to look around with sample runs, no sign-up needed)
 - **API docs:** https://run-analytics-api.onrender.com/docs. It runs on Render's free tier, so the first request after a quiet spell can take up to a minute.
-- **Write-ups:** [design decisions and lessons](docs/DECISIONS.md) · [race-prediction model](docs/MODEL.md) · [project plan](docs/PROJECT_PLAN.md)
+- **Write-ups:** [design decisions and lessons](docs/DECISIONS.md) · [race-prediction model](docs/MODEL.md)
 
 | Run page | Trends and predictions | Race goals |
 |---|---|---|
