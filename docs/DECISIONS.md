@@ -39,7 +39,7 @@ This file records why the project is built the way it is: the choices I made, wh
 - Signed-out visitors land on a welcome page that explains how to export a GPX from Strava or Garmin, instead of a bare login form.
 
 ### A coverage floor in CI
-- Backend coverage is 96%. CI fails below 94%, so the badge can't quietly go stale.
+- Backend coverage is 97%. CI fails below 94%, so coverage can't quietly drop. (The README coverage badge is typed by hand; update it when the number moves.)
 
 ---
 
