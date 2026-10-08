@@ -19,6 +19,8 @@ const STATUS_LABELS: Record<GoalAnalysis["status"], string> = {
   passed: "Race day passed",
 };
 
+const versusTarget = (gap: number) => (Math.abs(gap) < 1 ? "right on target" : `${describeGap(gap)} than target`);
+
 function statusSentence(a: GoalAnalysis): string {
   switch (a.status) {
     case "no_data":
@@ -96,12 +98,17 @@ function GoalCard({ goal, demo, onChanged }: { goal: Goal; demo: boolean; onChan
             <div className="tile">
               <div className="tile-label">Predicted now</div>
               <div className="tile-value">{a.now_s === null ? "–" : formatDuration(a.now_s)}</div>
-              {a.now_s !== null && <div className="tile-note">{describeGap(a.now_s - target)} than target</div>}
+              {a.now_s !== null && <div className="tile-note">{versusTarget(a.now_s - target)}</div>}
             </div>
             <div className="tile">
               <div className="tile-label">Projected on race day</div>
               <div className="tile-value">{a.projected_s === null ? "–" : formatDuration(a.projected_s)}</div>
-              {a.projected_s !== null && <div className="tile-note">{describeGap(a.projected_s - target)} than target</div>}
+              {a.projected_s !== null && (
+                <div className="tile-note">
+                  {versusTarget(a.projected_s - target)}
+                  {a.projection_basis === "current" && ", if fitness holds"}
+                </div>
+              )}
             </div>
           </>
         )}

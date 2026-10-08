@@ -107,13 +107,40 @@ def test_on_track_from_improving_trend():
     assert b.status == "on_track"
 
 
-def test_projection_needs_history_and_is_clamped():
-    flat = [WeekPoint(TODAY, 7000.0)] * 12
-    assert project(flat, 7000, 8)[0] is None  # one distinct value: not enough history
+def test_flat_trend_projects_current_time():
+    # Steady training with no new bests: the prediction doesn't move, which is still a trend.
+    flat = [WeekPoint(TODAY - timedelta(weeks=11 - i), 7000.0) for i in range(12)]
+    projected, note, basis = project(flat, 7000, 8)
+    assert (projected, basis) == (7000, "trend")
+    assert "hasn't changed in the last 12 weeks" in note
+
+
+def test_short_history_assumes_current_fitness():
+    points = [WeekPoint(TODAY - timedelta(weeks=11 - i), None) for i in range(10)]
+    points += [WeekPoint(TODAY - timedelta(weeks=1), 7100.0), WeekPoint(TODAY, 7000.0)]
+    projected, note, basis = project(points, 7000, 8)
+    assert (projected, basis) == (7000, "current")
+    assert "Only 2 weeks of data" in note
+
+
+def test_steep_trend_is_clamped():
     steep = [WeekPoint(TODAY - timedelta(weeks=11 - i), 8000 - 300 * i) for i in range(12)]
-    projected, note = project(steep, 4700, 10)
+    projected, note, basis = project(steep, 4700, 10)
     assert projected == pytest.approx(4700 - 0.01 * 4700 * 10)  # capped at 1% a week
-    assert "caps" in note
+    assert "caps" in note and basis == "trend"
+
+
+def test_single_race_still_gives_a_race_day_projection():
+    a = analyse(
+        distance_m=HALF,
+        target_s=2 * 3600,
+        race_date=TODAY + timedelta(weeks=8),
+        today=TODAY,
+        efforts=[ten_k_race(3, 55)],
+        runs=[],
+    )
+    assert a.projected_s == a.now_s is not None
+    assert a.projection_basis == "current"
 
 
 def test_equivalents_are_shorter_checkpoints():
@@ -255,6 +282,7 @@ def test_goal_uses_your_runs(client):
     ]
     assert a["status"] == "already_there"
     assert a["now_s"] == pytest.approx(3000 * 2.10975**1.06, abs=1)
+    assert a["projected_s"] == a["now_s"] and a["projection_basis"] == "current"
 
 
 @pytest.mark.parametrize(

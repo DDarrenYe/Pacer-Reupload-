@@ -50,7 +50,7 @@ The Goals page reuses the Riegel prediction from your nearest recent effort (the
 
 | Rule | Value |
 |---|---|
-| Trajectory | Prediction at the end of each of the last 12 weeks; least-squares slope; needs 3 distinct values |
+| Trajectory | Prediction at the end of each of the last 12 weeks; least-squares slope; needs 4 weeks with a prediction, otherwise assumes today's fitness holds |
 | Projection clamp | At most 1% faster or 0.5% slower per week |
 | "Within reach" | Needs ≤ 0.5% improvement per week |
 | Weekly distance guide | 5k 15 km, 10k 20 km, half 30 km, marathon 45 km (4-week average; within 5% counts as met) |

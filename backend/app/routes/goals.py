@@ -114,6 +114,7 @@ def _out(goal: Goal, efforts, runs, today) -> GoalOut:
             anchor=a.anchor,
             projected_s=a.projected_s,
             projection_note=a.projection_note,
+            projection_basis=a.projection_basis,
             needed_pct_per_week=a.needed_pct_per_week,
             weekly=[WeekPointOut.model_validate(p) for p in a.weekly],
             equivalents=[

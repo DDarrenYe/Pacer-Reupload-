@@ -109,6 +109,7 @@ export interface GoalAnalysis {
   anchor: string | null;
   projected_s: number | null;
   projection_note: string | null;
+  projection_basis: "trend" | "current" | null;
   needed_pct_per_week: number | null;
   weekly: { week_end: string; predicted_s: number | null }[];
   equivalents: { name: string; distance_m: number; time_s: number }[];

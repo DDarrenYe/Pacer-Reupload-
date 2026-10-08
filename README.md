@@ -111,7 +111,7 @@ Add a race on the **Goals** tab: pick a distance (5k, 10k, half, marathon or any
 - **Checkpoint times:** a 5k and 10k that match the goal, so you can test yourself before race day.
 - **What to do:** suggestions for weekly distance, long run, goal-pace practice, training load and taper. Each one quotes the number behind it, e.g. "you've averaged 18 km a week; build towards 30 km".
 
-The projection carries your recent trend forward, but at no more than 1% faster or 0.5% slower a week. With less than 3 weeks of changing predictions, it says there isn't enough history instead of guessing. After race day, a run of about that distance within a day of the date is taken as your result. The thresholds are in [docs/MODEL.md](docs/MODEL.md#goals) and the reasoning is in [docs/DECISIONS.md](docs/DECISIONS.md#after-launch-race-goals).
+The projection carries your recent trend forward, but at no more than 1% faster or 0.5% slower a week. With under 4 weeks of data, it assumes your current fitness holds and says so, rather than guessing a trend. After race day, a run of about that distance within a day of the date is taken as your result. The thresholds are in [docs/MODEL.md](docs/MODEL.md#goals) and the reasoning is in [docs/DECISIONS.md](docs/DECISIONS.md#after-launch-race-goals).
 
 ## Supported files
 

@@ -24,7 +24,9 @@ from app.analytics.predict import (
 )
 
 TRAJECTORY_WEEKS = 12
-MIN_TRAJECTORY_POINTS = 3
+# Weeks with a prediction needed before fitting a trend. A flat line still counts: the
+# prediction only moves when you set a new best, so "no change" is real information.
+MIN_TRAJECTORY_WEEKS = 4
 # The trend is projected forward, but no faster than 1% a week and no slower than
 # 0.5% a week: straight-line extrapolation of a few noisy points can promise anything.
 MAX_IMPROVEMENT_PER_WEEK = 0.01
@@ -83,6 +85,7 @@ class GoalAnalysis:
     anchor: str | None = None
     projected_s: float | None = None
     projection_note: str | None = None
+    projection_basis: str | None = None  # trend | current
     needed_pct_per_week: float | None = None
     weekly: list[WeekPoint] = field(default_factory=list)
     equivalents: list[tuple[str, float, float]] = field(default_factory=list)
@@ -119,22 +122,38 @@ def weekly_predictions(efforts: list[Effort], distance_m: float, today: date) ->
     return points
 
 
-def project(points: list[WeekPoint], now_s: float, weeks_ahead: float) -> tuple[float | None, str]:
-    """Least-squares trend of the weekly predictions, clamped, carried to race day."""
+def project(points: list[WeekPoint], now_s: float, weeks_ahead: float) -> tuple[float, str, str]:
+    """Race-day time, how it was worked out, and the basis ("trend" or "current").
+
+    With enough weeks, the least-squares trend of the weekly predictions is clamped and
+    carried to race day. Otherwise it assumes today's fitness holds rather than guessing.
+    """
     known = [(i, p.predicted_s) for i, p in enumerate(points) if p.predicted_s is not None]
-    if len({round(v) for _, v in known}) < MIN_TRAJECTORY_POINTS:
-        return None, "Not enough history yet to see a trend: keep uploading runs."
+    weeks = len(known)
+    if weeks < MIN_TRAJECTORY_WEEKS:
+        return (
+            now_s,
+            f"Only {weeks} week{'' if weeks == 1 else 's'} of data so far, so race day assumes "
+            "your fitness stays where it is. Keep uploading runs to see a trend.",
+            "current",
+        )
     x = np.array([i for i, _ in known], dtype=float)
     y = np.array([v for _, v in known], dtype=float)
     slope = float(np.polyfit(x, y, 1)[0])  # seconds per week; negative = getting faster
+    if abs(slope) < 1:
+        note = (
+            f"Your predicted time hasn't changed in the last {weeks} weeks (no new best "
+            "efforts), so race day assumes it stays the same."
+        )
+        return now_s, note, "trend"
     clamped = min(max(slope, -MAX_IMPROVEMENT_PER_WEEK * now_s), MAX_DECLINE_PER_WEEK * now_s)
     note = (
         f"Your predicted time has been changing by {slope:+.0f} s a week over the last "
-        f"{TRAJECTORY_WEEKS} weeks."
+        f"{weeks} weeks."
     )
     if clamped != slope:
         note += " The projection caps that rate, since trends this steep rarely last."
-    return now_s + clamped * max(weeks_ahead, 0), note
+    return now_s + clamped * max(weeks_ahead, 0), note, "trend"
 
 
 def equivalents(
@@ -177,8 +196,8 @@ def analyse(
         a.anchor = _label(now[1])
         a.personal_now_s = round(fit.predict(distance_m), 1) if fit else None
         a.weekly = weekly_predictions(efforts, distance_m, today)
-        projected, a.projection_note = project(a.weekly, a.now_s, days_left / 7)
-        a.projected_s = round(projected, 1) if projected is not None else None
+        projected, a.projection_note, a.projection_basis = project(a.weekly, a.now_s, days_left / 7)
+        a.projected_s = round(projected, 1)
         a.status = _status(a, target_s, days_left)
 
     a.recommendations = _recommendations(a, distance_m, target_pace, today, runs)

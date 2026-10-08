@@ -42,6 +42,7 @@ class AnalysisOut(BaseModel):
     anchor: str | None
     projected_s: float | None
     projection_note: str | None
+    projection_basis: str | None
     needed_pct_per_week: float | None
     weekly: list[WeekPointOut]
     equivalents: list[EquivalentOut]
