@@ -13,23 +13,6 @@ Pacer is a running analytics app. Upload a GPX file (or enter a treadmill run by
 |---|---|
 | ![Run page with splits and charts](docs/screenshots/run.png) | ![Trends page with race predictions](docs/screenshots/trends.png) |
 
-## Architecture
-
-```mermaid
-flowchart LR
-  B[Browser] -->|pages| V[Vercel<br/>React + TypeScript]
-  B -->|log in| SA[Supabase Auth]
-  B -->|API calls + token| R[Render<br/>FastAPI]
-  R -->|verify token, JWKS| SA
-  R -->|runs, splits, best efforts| DB[(Supabase Postgres<br/>RLS on every table)]
-  R -->|original GPX files| ST[Supabase Storage<br/>private bucket]
-```
-
-- **All the work happens in the API.** The browser only logs in and draws charts, so every rule (who owns what, how splits are worked out) lives in one tested place.
-- **The database denies everything by default.** Row level security is on and has no policies, so Supabase's public REST API can't read anyone's runs; only the API can.
-- **Original files are kept**, so every run can be recalculated when the analysis improves. That has already happened once: a GPS-distance fix calibrated against Strava.
-- **The demo** uses short-lived read-only tokens signed by the API, not a shared password (see [DECISIONS](docs/DECISIONS.md#week-6-ready-for-real-users)).
-
 ## Built with
 Python, FastAPI, SQLAlchemy, Alembic, pandas, NumPy, statsmodels, gpxpy · PostgreSQL (Supabase) · React, TypeScript, Vite, Chart.js · pytest, vitest, Playwright, ruff · GitHub Actions, Render, Vercel.
 
