@@ -35,7 +35,13 @@ A model fitted to every run learns your *easy* pace. The method stands or falls 
 - With **2 runners and 6 test pairs**, Riegel won: 4.5% against 8.2% (personal) and 11.2% (pooled), and the regression's confidence intervals were very wide. This is the **bias–variance trade-off**: with little data, a fixed, sensible exponent beats one estimated from a handful of noisy points.
 
 ### Real data
-_Run `scripts/evaluate_model.py` and paste the output here._
+Output of `scripts/evaluate_model.py` on the live database, 8 Oct 2026:
+
+| Runners | Runs | Races | Hard efforts | Anchor→target pairs |
+|---|---|---|---|---|
+| 1 | 14 | 1 | 3 | 0 |
+
+**Not enough data yet to score the methods.** A pair needs a hard effort at one distance followed by a later one at a clearly different distance, and the test set needs at least 3 pairs. So far the real data is one runner (me), and none of my efforts make a pair yet. Until there are more runners and races, the synthetic check above is the evidence, and the app shows "not enough data" rather than a made-up accuracy. I'll re-run this as testers upload runs.
 
 ## Limitations
 - **Small n.** With a handful of runners, the pooled model is mostly noise. Its coefficients come with 95% CIs for exactly this reason.
