@@ -10,6 +10,7 @@ import Welcome from "./pages/Welcome";
 // Pages with charts pull in Chart.js; load them only when opened.
 const RunDetail = lazy(() => import("./pages/RunDetail"));
 const Trends = lazy(() => import("./pages/Trends"));
+const Goals = lazy(() => import("./pages/Goals"));
 const Account = lazy(() => import("./pages/Account"));
 const Feedback = lazy(() => import("./pages/Feedback"));
 
@@ -29,6 +30,7 @@ function Nav() {
         <div className="nav-tabs">
           <NavLink to="/" end className="nav-tab">Runs</NavLink>
           <NavLink to="/trends" className="nav-tab">Trends</NavLink>
+          <NavLink to="/goals" className="nav-tab">Goals</NavLink>
           <NavLink to="/feedback" state={{ from: location.pathname }} className="nav-tab">Feedback</NavLink>
         </div>
         <Link to="/account" className="nav-email">{demo ? "Demo" : session?.user.email}</Link>
@@ -62,6 +64,7 @@ export default function App() {
             <Route path="/" element={protect(<Runs />)} />
             <Route path="/runs/:id" element={protect(<RunDetail />)} />
             <Route path="/trends" element={protect(<Trends />)} />
+            <Route path="/goals" element={protect(<Goals />)} />
             <Route path="/account" element={protect(<Account />)} />
             <Route path="/feedback" element={protect(<Feedback />)} />
             <Route path="*" element={<main><p>Page not found. <Link to="/">Go to your runs</Link></p></main>} />

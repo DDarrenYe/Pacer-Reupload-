@@ -11,6 +11,8 @@
   --accent: #2a78d6;
   --accent-text: #ffffff;
   --critical: #d03b3b;
+  --good: #1f7a3d;
+  --warning: #965a00;
   --info-bg: #e8f1fc;
   --error-bg: #fbeaea;
   --radius: 10px;
@@ -32,6 +34,8 @@
     --series-1: #3987e5;
     --accent: #3987e5;
     --critical: #e66767;
+    --good: #4cc27a;
+    --warning: #e0a43a;
     --info-bg: #17263a;
     --error-bg: #3a1c1c;
   }
@@ -234,3 +238,23 @@ textarea {
   text-align: center;
 }
 .nav a.nav-email { color: var(--text-muted); }
+.page-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.goal-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.goal-header h2 { margin: 0; }
+.goal-header p { margin: 2px 0 0; }
+.goal-verdict { margin: 0; }
+.goal-subhead { margin: 4px 0 -4px; }
+.tile-note { font-size: 0.85rem; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+/* The label always says the status in words; colour only reinforces it. */
+.status {
+  padding: 4px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  font-size: 0.85rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.status-already_there, .status-on_track { border-color: var(--good); color: var(--good); }
+.status-within_reach { border-color: var(--accent); color: var(--accent); }
+.status-stretch { border-color: var(--warning); color: var(--warning); }
+@media (max-width: 600px) { .goal-tiles { grid-template-columns: 1fr; } }

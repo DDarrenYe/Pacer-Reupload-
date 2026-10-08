@@ -92,7 +92,7 @@ export function LineChart({ title, labels, values, format, lowerIsBetter, refere
   };
   const notes = [];
   if (lowerIsBetter) notes.push("faster is higher");
-  if (references.length) notes.push(`dashed lines: ${references.map((r) => r.label).join(", ")}`);
+  if (references.length) notes.push(`dashed line${references.length > 1 ? "s" : ""}: ${references.map((r) => r.label).join(", ")}`);
   const note = notes.join("; ");
   // Dense daily series: markers only on hover, or the dots swamp the line.
   const dense = values.length > 30;

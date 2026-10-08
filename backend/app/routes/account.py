@@ -6,7 +6,7 @@ from sqlalchemy import delete, func, select
 
 from app.auth import CurrentUserId, WritableUserId, is_demo_user
 from app.db import DbSession
-from app.models import Feedback, Run
+from app.models import Feedback, Goal, Run
 from app.storage import StorageDep, StorageError
 from app.supabase_admin import AdminDep, AdminError
 
@@ -25,7 +25,7 @@ def get_account(user_id: CurrentUserId, db: DbSession) -> dict:
 def delete_account(
     user_id: WritableUserId, db: DbSession, storage: StorageDep, admin: AdminDep
 ) -> Response:
-    """Delete everything: runs (with splits and best efforts), files, feedback, login."""
+    """Delete everything: runs (with splits and best efforts), files, goals, feedback, login."""
     runs = db.scalars(select(Run).where(Run.user_id == user_id)).all()
     for run in runs:
         if run.raw_file_key:
@@ -36,6 +36,7 @@ def delete_account(
                 logger.error("Couldn't delete %s while deleting an account", run.raw_file_key)
         db.delete(run)
     db.execute(delete(Feedback).where(Feedback.user_id == user_id))
+    db.execute(delete(Goal).where(Goal.user_id == user_id))
     db.commit()
     try:
         admin.delete_user(user_id)

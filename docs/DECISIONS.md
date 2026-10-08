@@ -4,6 +4,22 @@ This file records why the project is built the way it is: the choices I made, wh
 
 ---
 
+## After launch: race goals
+
+### Rule-based, with the number behind every suggestion
+- **Decision:** a goal is a race distance, a target time and a date. Pacer compares it with your predicted time now, projects your trend to race day, and lists what to work on. Every suggestion quotes the number that triggered it ("you've averaged 18 km a week; build towards 30"). The thresholds sit in one table in [`analytics/goals.py`](backend/app/analytics/goals.py).
+- **Why not a learned model?** There's no data on which advice works, so a model would only dress up guesses. Rules a runner can read and argue with are more honest, and easy to test, since there's one synthetic runner per status and per suggestion.
+- **Within 5% of a guide counts as meeting it.** The first version told someone averaging 29.6 km a week to "build towards 30 km (you've averaged 30 km)".
+
+### The trend is clamped, and says when it can't tell
+- **Trajectory:** your predicted race time at the end of each of the last 12 weeks, with a least-squares slope carried to race day.
+- **Clamp:** the projection improves by at most 1% a week and gets worse by at most 0.5%. A couple of breakthrough runs make a steep line, and straight-line extrapolation would happily promise a 1:30 half to a 2:00 runner. When the cap applies, the page says so.
+- **Not enough history:** with fewer than 3 distinct weekly predictions, there's no projection, just a message to keep uploading. A made-up trend is worse than none.
+- **Status** is a word on the card, not just a colour: Already there, On track (the trend gets there), Within reach (needs ≤ 0.5% a week, which most recreational runners can manage), or Stretch.
+- **Race day passed:** a run within a day of the race date and within 3% of its distance is taken as the result, and the card shows whether you hit the goal.
+
+---
+
 ## Week 6: ready for real users
 
 ### A demo without a shared password
@@ -14,7 +30,7 @@ This file records why the project is built the way it is: the choices I made, wh
 - **Seeding** (`scripts/seed_demo.py`) goes through the real upload code, so the demo shows exactly what users get. The first version made every run perfectly even-paced, so every run said "even split". Long runs now fade and tempo runs build, like real ones.
 
 ### Deleting an account deletes everything
-- **Decision:** `DELETE /account` removes runs (splits and best efforts cascade), the original files in storage, feedback, and finally the Supabase login through the Admin API. If a file can't be deleted, the rows still go and the orphan is logged. If removing the login fails, the user is told that their data is gone but the login isn't.
+- **Decision:** `DELETE /account` removes runs (splits and best efforts cascade), the original files in storage, goals, feedback, and finally the Supabase login through the Admin API. If a file can't be deleted, the rows still go and the orphan is logged. If removing the login fails, the user is told that their data is gone but the login isn't.
 - **Why:** You can't ask people to upload GPS traces of where they run without letting them take it all back. The UI asks you to type DELETE first.
 
 ### Feedback, errors and the first-visit experience

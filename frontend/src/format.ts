@@ -73,3 +73,18 @@ export function splitDuration(totalSeconds: number): [string, string, string] {
   const h = Math.floor(t / 3600);
   return [h ? String(h) : "", String(Math.floor((t % 3600) / 60)), String(t % 60).padStart(2, "0")];
 }
+
+/** Days until a date -> "today", "tomorrow", "in 5 days", "in 6 weeks", or "3 days ago". */
+export function describeCountdown(days: number): string {
+  if (days === 0) return "today";
+  if (days === 1) return "tomorrow";
+  if (days < 0) return days === -1 ? "yesterday" : `${-days} days ago`;
+  if (days < 14) return `in ${days} days`;
+  return `in ${Math.round(days / 7)} weeks`;
+}
+
+/** Seconds of difference -> "1:23 faster" / "0:45 slower" / "spot on". */
+export function describeGap(seconds: number): string {
+  if (Math.abs(seconds) < 1) return "spot on";
+  return `${formatDuration(Math.abs(seconds))} ${seconds < 0 ? "faster" : "slower"}`;
+}

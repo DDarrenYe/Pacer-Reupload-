@@ -97,3 +97,32 @@ export interface LoadDay {
   acwr: number | null;
   flag: "spike" | "normal" | "low" | null;
 }
+
+export type GoalStatus = "no_data" | "already_there" | "on_track" | "within_reach" | "stretch" | "passed";
+
+export interface GoalAnalysis {
+  status: GoalStatus;
+  days_left: number;
+  target_pace_s_per_km: number;
+  now_s: number | null;
+  personal_now_s: number | null;
+  anchor: string | null;
+  projected_s: number | null;
+  projection_note: string | null;
+  needed_pct_per_week: number | null;
+  weekly: { week_end: string; predicted_s: number | null }[];
+  equivalents: { name: string; distance_m: number; time_s: number }[];
+  recommendations: string[];
+  result_s: number | null;
+  result_hit: boolean | null;
+}
+
+export interface Goal {
+  id: string;
+  name: string;
+  distance_m: number;
+  target_time_s: number;
+  race_date: string;
+  created_at: string;
+  analysis: GoalAnalysis;
+}

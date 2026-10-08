@@ -1,9 +1,9 @@
 # Pacer
 
 [![CI](https://github.com/DDarrenYe/Pacer/actions/workflows/ci.yml/badge.svg?branch=dev%28Mac%29)](https://github.com/DDarrenYe/Pacer/actions/workflows/ci.yml)
-![Backend test coverage](https://img.shields.io/badge/backend%20coverage-96%25-brightgreen)
+![Backend test coverage](https://img.shields.io/badge/backend%20coverage-97%25-brightgreen)
 
-Pacer is a running analytics app. Upload a GPX file (or enter a treadmill run by hand) and see your km splits, how much you fade, your best efforts, weekly trends and predicted race times.
+Pacer is a running analytics app. Upload a GPX file (or enter a treadmill run by hand) and see your km splits, how much you fade, your best efforts, weekly trends and predicted race times. Set a race goal (say, a sub-2:10 half in November) and Pacer shows where your trend puts you on race day and what to work on.
 
 - **Try it:** https://training-analytics-tool.vercel.app (click **Try the demo** to look around with sample runs, no sign-up needed)
 - **API docs:** https://run-analytics-api.onrender.com/docs. It runs on Render's free tier, so the first request after a quiet spell can take up to a minute.
@@ -33,6 +33,8 @@ Python, FastAPI, SQLAlchemy, Alembic, pandas, NumPy, statsmodels, gpxpy · Postg
 | GET | `/trends?weeks=26` | ✔ | Weekly distance, average pace and predicted 5k |
 | GET | `/predictions` | ✔ | 5k, 10k, half and marathon predictions by three methods |
 | GET | `/predictions/evaluation` | ✔ | Accuracy of each method (MAE, time-ordered test; aggregate only) |
+| GET / POST | `/goals` | ✔ | Your race goals, each with predicted time now, projected race-day time and suggestions / add a goal |
+| PUT / DELETE | `/goals/{id}` | ✔ | Change or delete a goal |
 | GET | `/account` / DELETE `/account` | ✔ | Your run count / delete your account and everything in it |
 | POST | `/feedback` | ✔ | Send the developer a note |
 | POST | `/demo/session` | – | A 2-hour read-only token for the demo account |
@@ -96,6 +98,7 @@ CI runs lint, applies the migrations to a real Postgres 16, checks they match th
 | Best efforts | Fastest 400 m, 1 km, 1 mile, 5 km, 10 km, half and full marathon anywhere in the run (sliding window). |
 | Training load | Moving minutes per day. ACWR is the last 7 days divided by the weekly average of the last 28 days: above 1.5 is a spike, below 0.8 is low. Needs 21 days of history. |
 | Race prediction | Riegel (1.06), your own fitted exponent, and a pooled regression on all runners. Only hard efforts count. See [docs/MODEL.md](docs/MODEL.md). |
+| Goals | Predicted time now, a clamped 12-week trend projected to race day, a status (already there, on track, within reach, stretch), equivalent checkpoint times and rule-based suggestions. See [docs/MODEL.md](docs/MODEL.md#goals). |
 | Heart rate | Read from Garmin-style GPX extensions (Strava and Garmin exports) or a CSV `avg_hr` column, and time-weighted. |
 
 ## Supported files

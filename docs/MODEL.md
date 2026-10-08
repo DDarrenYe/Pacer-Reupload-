@@ -44,6 +44,24 @@ _Run `scripts/evaluate_model.py` and paste the output here._
 - **Envelope lag.** A best from 5 months ago can anchor a prediction even if fitness has since changed.
 - **GPS noise** affects best efforts. Splits were checked against Strava, but individual efforts can be a few seconds out.
 
+## Goals
+
+The Goals page reuses the Riegel prediction from your nearest recent effort (the same as the Trends page) and adds:
+
+| Rule | Value |
+|---|---|
+| Trajectory | Prediction at the end of each of the last 12 weeks; least-squares slope; needs 3 distinct values |
+| Projection clamp | At most 1% faster or 0.5% slower per week |
+| "Within reach" | Needs ≤ 0.5% improvement per week |
+| Weekly distance guide | 5k 15 km, 10k 20 km, half 30 km, marathon 45 km (4-week average; within 5% counts as met) |
+| Long run guide | 5k 8 km, 10k 12 km, half 16 km, marathon 28 km |
+| Goal-pace practice | At least 3 km within 2 s/km of goal pace in one run in the last 4 weeks (full splits, or the whole run for manual entries) |
+| Load warning | ACWR above 1.5 |
+| Taper | From 14 days out: cut distance by 30–50% |
+| Checkpoints | Equivalent 5k/10k times from your own exponent (if between 1.0 and 1.2), otherwise 1.06 |
+
+These are common rules of thumb for recreational runners, not a coaching plan, and the app says so.
+
 ## Next steps
 - Bootstrap the pooled model with a public dataset of race results, so it has enough data before Pacer has many users.
 - Use heart rate to decide which efforts were hard.

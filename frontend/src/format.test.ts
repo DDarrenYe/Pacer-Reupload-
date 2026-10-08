@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  describeCountdown,
   describeDrift,
+  describeGap,
   describeExponent,
   formatDistance,
   formatDuration,
@@ -67,4 +69,25 @@ describe("editing helpers", () => {
     expect(defaultManualName(6.4, "road")).toBe("6.4 km road run");
     expect(defaultManualName(21.0975, "road")).toBe("21.0975 km road run");
   });
+});
+
+describe("describeCountdown", () => {
+  it("names near days", () => {
+    expect(describeCountdown(0)).toBe("today");
+    expect(describeCountdown(1)).toBe("tomorrow");
+    expect(describeCountdown(9)).toBe("in 9 days");
+  });
+  it("uses weeks further out", () => expect(describeCountdown(49)).toBe("in 7 weeks"));
+  it("handles the past", () => {
+    expect(describeCountdown(-1)).toBe("yesterday");
+    expect(describeCountdown(-4)).toBe("4 days ago");
+  });
+});
+
+describe("describeGap", () => {
+  it("says faster or slower", () => {
+    expect(describeGap(-83)).toBe("1:23 faster");
+    expect(describeGap(179)).toBe("2:59 slower");
+  });
+  it("calls a tiny gap spot on", () => expect(describeGap(0.4)).toBe("spot on"));
 });

@@ -2,6 +2,7 @@ import { demoToken, saveDemo } from "./demo";
 import { supabase } from "./supabase";
 import type {
   Evaluation,
+  Goal,
   LoadDay,
   Run,
   RunDetail,
@@ -62,6 +63,13 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   return body as T;
 }
 
+export interface GoalInput {
+  name?: string;
+  distance_km: number;
+  target_time_s: number;
+  race_date: string;
+}
+
 export interface Account {
   run_count: number;
   is_demo: boolean;
@@ -82,6 +90,20 @@ export const api = {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ message, page }),
     }),
+  listGoals: () => request<Goal[]>("/goals"),
+  createGoal: (input: GoalInput) =>
+    request<Goal>("/goals", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    }),
+  updateGoal: (id: string, input: GoalInput) =>
+    request<Goal>(`/goals/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    }),
+  deleteGoal: (id: string) => request<void>(`/goals/${id}`, { method: "DELETE" }),
   listRuns: () => request<Run[]>("/runs"),
   predictions: () => request<RunnerPredictions>("/predictions"),
   evaluation: () => request<Evaluation>("/predictions/evaluation"),

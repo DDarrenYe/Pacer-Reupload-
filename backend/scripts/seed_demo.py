@@ -110,7 +110,19 @@ def main() -> None:
             "name": "Treadmill (entered manually)",
         },
     ).raise_for_status()
-    print(f"Demo account ready: {uploaded + 1} runs for user {demo_id}.")
+    # And a goal, so the Goals tab has something to show.
+    for goal in client.get("/goals").json():
+        client.delete(f"/goals/{goal['id']}")
+    client.post(
+        "/goals",
+        json={
+            "name": "Sub 1:59 half marathon",
+            "distance_km": 21.0975,
+            "target_time_s": 1 * 3600 + 59 * 60,  # sub 1:59: just within reach of the trend
+            "race_date": (today + timedelta(weeks=7)).date().isoformat(),
+        },
+    ).raise_for_status()
+    print(f"Demo account ready: {uploaded + 1} runs and a goal for user {demo_id}.")
 
 
 if __name__ == "__main__":
