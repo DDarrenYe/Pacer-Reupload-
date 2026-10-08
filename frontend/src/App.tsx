@@ -1,5 +1,5 @@
 import { lazy, Suspense, type ReactNode } from "react";
-import { BrowserRouter, Link, Route, Routes, useLocation } from "react-router-dom";
+import { BrowserRouter, Link, NavLink, Route, Routes, useLocation } from "react-router-dom";
 
 import { AuthProvider, RequireAuth, signOut, useAuth } from "./auth";
 import ErrorBoundary from "./components/ErrorBoundary";
@@ -22,10 +22,15 @@ function Nav() {
   return (
     <>
       <nav className="nav">
-        <Link to="/" className="brand">Pacer</Link>
-        <Link to="/">Runs</Link>
-        <Link to="/trends">Trends</Link>
-        <Link to="/feedback" state={{ from: location.pathname }}>Feedback</Link>
+        <Link to="/" className="brand">
+          Pacer
+          <img src="/favicon.svg" alt="" width="28" height="28" />
+        </Link>
+        <div className="nav-tabs">
+          <NavLink to="/" end className="nav-tab">Runs</NavLink>
+          <NavLink to="/trends" className="nav-tab">Trends</NavLink>
+          <NavLink to="/feedback" state={{ from: location.pathname }} className="nav-tab">Feedback</NavLink>
+        </div>
         <Link to="/account" className="nav-email">{demo ? "Demo" : session?.user.email}</Link>
         <button className="link" onClick={() => signOut()}>{demo ? "Leave demo" : "Sign out"}</button>
       </nav>
