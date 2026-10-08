@@ -1,8 +1,5 @@
 # Pacer
 
-[![CI](https://github.com/DDarrenYe/Pacer/actions/workflows/ci.yml/badge.svg?branch=dev%28Mac%29)](https://github.com/DDarrenYe/Pacer/actions/workflows/ci.yml)
-![Backend test coverage](https://img.shields.io/badge/backend%20coverage-97%25-brightgreen)
-
 Pacer is a running analytics app. Upload a GPX file (or enter a treadmill run by hand) and see your km splits, how much you fade, your best efforts, weekly trends and predicted race times. Set a race goal (say, a sub-2:10 half in November) and Pacer shows where your trend puts you on race day and what to work on.
 
 - **Try it:** https://training-analytics-tool.vercel.app (click **Try the demo** to look around with sample runs, no sign-up needed)
