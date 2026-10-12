@@ -1,7 +1,7 @@
 import uuid
 from datetime import UTC, datetime
 
-from sqlalchemy import DateTime, Float, ForeignKey, String, Text, UniqueConstraint
+from sqlalchemy import BigInteger, DateTime, Float, ForeignKey, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db import Base
@@ -9,7 +9,10 @@ from app.db import Base
 
 class Run(Base):
     __tablename__ = "runs"
-    __table_args__ = (UniqueConstraint("user_id", "file_hash", name="uq_runs_user_file_hash"),)
+    __table_args__ = (
+        UniqueConstraint("user_id", "file_hash", name="uq_runs_user_file_hash"),
+        UniqueConstraint("user_id", "strava_activity_id", name="uq_runs_user_strava_activity"),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
     # Supabase auth.users id. No foreign key: that table lives in Supabase's own schema.
@@ -29,6 +32,9 @@ class Run(Base):
     raw_file_key: Mapped[str | None] = mapped_column(String(300))
     file_hash: Mapped[str | None] = mapped_column(String(64))
     notes: Mapped[str | None] = mapped_column(Text)
+    # Set for runs imported from Strava: kept out of the pooled model, and deleted if
+    # the user disconnects Strava.
+    strava_activity_id: Mapped[int | None] = mapped_column(BigInteger)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(UTC)
     )

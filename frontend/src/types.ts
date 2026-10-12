@@ -22,6 +22,7 @@ export interface Run {
   pace_drift_s_per_km: number | null;
   fastest_split_no: number | null;
   slowest_split_no: number | null;
+  strava_activity_id: number | null;
 }
 
 export interface Split {
@@ -126,4 +127,18 @@ export interface Goal {
   race_date: string;
   created_at: string;
   analysis: GoalAnalysis;
+}
+
+export interface StravaStatus {
+  enabled: boolean;
+  client_id: string | null;
+  connected: boolean;
+  athlete_name: string | null;
+  last_synced_at: string | null;
+}
+
+export interface StravaSyncResult {
+  imported: number;
+  skipped: number;
+  more: boolean;
 }

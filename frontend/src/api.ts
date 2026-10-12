@@ -7,6 +7,8 @@ import type {
   Run,
   RunDetail,
   RunnerPredictions,
+  StravaStatus,
+  StravaSyncResult,
   Surface,
   Week,
 } from "./types";
@@ -90,6 +92,15 @@ export const api = {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ message, page }),
     }),
+  stravaStatus: () => request<StravaStatus>("/strava"),
+  stravaConnect: (code: string, scope: string) =>
+    request<{ connected: boolean; athlete_name: string | null }>("/strava/connect", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code, scope }),
+    }),
+  stravaSync: () => request<StravaSyncResult>("/strava/sync", { method: "POST" }),
+  stravaDisconnect: () => request<void>("/strava", { method: "DELETE" }),
   listGoals: () => request<Goal[]>("/goals"),
   createGoal: (input: GoalInput) =>
     request<Goal>("/goals", {

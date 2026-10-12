@@ -23,6 +23,15 @@ class Settings(BaseSettings):
     # Leave the secret empty to switch the demo off.
     demo_token_secret: str = ""
     demo_user_id: str = "00000000-0000-4000-8000-00000000de30"
+    # Strava import. All three must be set to switch it on. The token key is a Fernet key
+    # that encrypts Strava tokens at rest; the verify token is any random string, shared
+    # with Strava when registering the webhook.
+    strava_client_id: str = ""
+    strava_client_secret: str = ""
+    strava_token_key: str = ""
+    strava_webhook_verify_token: str = ""
+    # Only changed to point at a fake Strava in local end-to-end tests.
+    strava_base_url: str = "https://www.strava.com"
     # Comma-separated origins allowed to call the API from a browser (the front end).
     cors_origins: str = "http://localhost:5173"
 
@@ -33,6 +42,10 @@ class Settings(BaseSettings):
         # Storage live beside it, not under it, so keep just https://<ref>.supabase.co.
         url = url.strip().rstrip("/")
         return url.removesuffix("/rest/v1")
+
+    @property
+    def strava_enabled(self) -> bool:
+        return bool(self.strava_client_id and self.strava_client_secret and self.strava_token_key)
 
     @property
     def cors_origin_list(self) -> list[str]:

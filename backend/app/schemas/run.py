@@ -38,6 +38,7 @@ class RunOut(BaseModel):
     pace_drift_s_per_km: float | None
     fastest_split_no: int | None
     slowest_split_no: int | None
+    strava_activity_id: int | None = None
 
 
 class SplitOut(BaseModel):

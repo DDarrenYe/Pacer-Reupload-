@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 
 import { api, type Account as AccountInfo } from "../api";
 import { signOut, useAuth } from "../auth";
+import StravaCard from "../components/StravaCard";
 import { useTitle } from "../useTitle";
 
 export default function Account() {
@@ -44,11 +45,14 @@ export default function Account() {
         </button>
       </section>
 
+      {!demo && <StravaCard />}
+
       {!demo && (
         <section className="card stack danger-zone">
           <h2>Delete my account</h2>
           <p>
-            This permanently deletes all your runs, their original files, any feedback you've sent, and your login. It
+            This permanently deletes all your runs, their original files, your goals, any feedback you've sent, your
+            Strava connection, and your login. It
             can't be undone.
           </p>
           <label>

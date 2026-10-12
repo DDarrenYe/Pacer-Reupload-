@@ -37,9 +37,9 @@ def load_efforts(db: Session, user_id: uuid.UUID | None = None) -> list[Effort]:
     if user_id is not None:
         best = best.where(Run.user_id == user_id)
         races = races.where(Run.user_id == user_id)
-    else:  # pooled data: the demo's synthetic runs must never shape real predictions
-        best = best.where(Run.user_id != _demo_id())
-        races = races.where(Run.user_id != _demo_id())
+    else:  # pooled data: never the demo's synthetic runs, nor Strava's (see _pooled)
+        best = _pooled(best)
+        races = _pooled(races)
 
     efforts = [
         Effort(str(u), str(r), started.date(), dist, secs, surface, is_race=False)
@@ -57,8 +57,15 @@ def load_volumes(db: Session, user_id: uuid.UUID | None = None) -> list[RunVolum
     if user_id is not None:
         query = query.where(Run.user_id == user_id)
     else:
-        query = query.where(Run.user_id != _demo_id())
+        query = _pooled(query)
     return [RunVolume(str(u), started.date(), dist) for u, started, dist in db.execute(query)]
+
+
+def _pooled(query):
+    """Only runs that may shape everyone's model: not the demo's synthetic runs, and not
+    runs imported from Strava, whose terms forbid using their data across users or for
+    machine learning. Strava runs still count for their owner's own predictions."""
+    return query.where(Run.user_id != _demo_id(), Run.strava_activity_id.is_(None))
 
 
 def _demo_id() -> uuid.UUID:

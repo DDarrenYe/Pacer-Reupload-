@@ -4,6 +4,30 @@ This file records why the project is built the way it is: the choices I made, wh
 
 ---
 
+## After launch: Strava import
+
+### Connect, not sign in
+- **Decision:** a "Connect with Strava" button on the Account page, next to the normal email login, rather than "Sign in with Strava".
+- **Why:** Strava isn't a Supabase login provider, and a second way to sign in would mean merging accounts, mapping emails Strava doesn't share, and two kinds of session. Connecting gives the convenience people want (no more exporting GPX files) with none of that.
+
+### The browser handles the redirect, the API handles the tokens
+- Strava sends the browser back to the front end with a one-time code. The front end checks the `state` it sent (so a link someone else crafted is ignored) and posts the code to `POST /strava/connect` with the user's normal login.
+- The API swaps the code for tokens using the client secret, which never reaches the browser. This way the API never has to trust an unauthenticated redirect to work out who the user is.
+- Tokens are encrypted at rest with a key only the server has.
+
+### Rebuilding a GPX instead of a second pipeline
+- Strava's API offers no GPX download for activities, only the raw recorded streams. [`app/strava.py`](backend/app/strava.py) rebuilds a GPX from them and hands it to the same `save_file_run` that uploads use, so splits, best efforts, duplicate checks and "recalculate" all work unchanged, and there's one parser to keep right.
+- Treadmill runs have no GPS, so they come in like a manual entry (distance and time).
+
+### Strava's terms shape the design
+- Strava's API Agreement (tightened in late 2024) says Strava data may only be shown to the athlete who owns it, and may not feed AI or machine-learning models. So Strava runs count for **your own** predictions, but are **kept out of the pooled regression** and its evaluation, which learn from everyone's runs.
+- Disconnecting deletes every imported run and its file, and so does revoking access on Strava's side (via the webhook) or a sync that finds the token dead.
+- Strava's webhook calls aren't signed, so anyone could post a fake "access revoked" event. Before deleting anything, the API checks by trying the stored refresh token: if it still works, the event is ignored. There's a test for exactly that forgery.
+- Sync takes 30 activities at a time to stay well inside Strava's limit of about 100 requests per 15 minutes, and says when there are more to fetch.
+- I couldn't load Strava's agreement from my build environment, so these choices follow its widely reported terms; check the current text before inviting other people.
+
+---
+
 ## After launch: race goals
 
 ### Rule-based, with the number behind every suggestion

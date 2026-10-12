@@ -1,6 +1,6 @@
 # Pacer
 
-Pacer is a running analytics app. Upload a GPX file and see your km splits, how much you fade, your best efforts, weekly trends and predicted race times. Set a race goal (say, a sub-2:10 half in November) and Pacer shows where your trend puts you on race day and what to work on.
+Pacer is a running analytics app. Connect Strava or upload a GPX file and see your km splits, how much you fade, your best efforts, weekly trends and predicted race times. Set a race goal (say, a sub-2:10 half in November) and Pacer shows where your trend puts you on race day and what to work on.
 
 - **Try it:** https://training-analytics-tool.vercel.app (click **Try the demo** to look around with sample runs, no sign-up needed)
 - **API docs:** https://run-analytics-api.onrender.com/docs. It runs on Render's free tier, so the first request after a quiet spell can take up to a minute.
@@ -30,6 +30,11 @@ Python, FastAPI, SQLAlchemy, Alembic, pandas, NumPy, statsmodels, gpxpy · Postg
 | GET | `/trends?weeks=26` | ✔ | Weekly distance, average pace and predicted 5k |
 | GET | `/predictions` | ✔ | 5k, 10k, half and marathon predictions by three methods |
 | GET | `/predictions/evaluation` | ✔ | Accuracy of each method (MAE, time-ordered test; aggregate only) |
+| GET | `/strava` | ✔ | Whether Strava import is available and connected |
+| POST | `/strava/connect` | ✔ | Finish connecting: swap the code from Strava's redirect for tokens |
+| POST | `/strava/sync` | ✔ | Import new runs from Strava (up to 30 at a time) |
+| DELETE | `/strava` | ✔ | Disconnect Strava and delete every run imported from it |
+| GET / POST | `/strava/webhook` | – | Strava's webhook: verification, and access revoked on Strava's side |
 | GET / POST | `/goals` | ✔ | Your race goals, each with predicted time now, projected race-day time and suggestions / add a goal |
 | PUT / DELETE | `/goals/{id}` | ✔ | Change or delete a goal |
 | GET | `/account` / DELETE `/account` | ✔ | Your run count / delete your account and everything in it |
@@ -73,7 +78,14 @@ npm run dev                  # http://localhost:5173 (keep the API running too)
 ### 4. Deploy to Render
 On Render, go to **New → Blueprint**, pick this repo and branch, and fill in `DATABASE_URL`, `SUPABASE_URL`, `SUPABASE_SECRET_KEY` and, for legacy projects only, `SUPABASE_JWT_SECRET`. `render.yaml` takes care of the rest, and migrations run automatically on every start. For the demo, set `DEMO_TOKEN_SECRET` to a long random string (`python -c "import secrets; print(secrets.token_urlsafe(48))"`) and run `python scripts/seed_demo.py` once against your database; it's safe to run again. Set `CORS_ORIGINS` to the front end's address, for example `https://your-app.vercel.app,http://localhost:5173`.
 
-### 5. Deploy the front end to Vercel
+### 5. Strava import (optional)
+1. Create an API app at https://www.strava.com/settings/api. Set **Authorization Callback Domain** to the front end's domain (for example `your-app.vercel.app`); `localhost` always works.
+2. On Render, set `STRAVA_CLIENT_ID` and `STRAVA_CLIENT_SECRET` from that page, `STRAVA_TOKEN_KEY` to a new key (`python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"`, and keep it: changing it disconnects everyone), and `STRAVA_WEBHOOK_VERIFY_TOKEN` to any random string.
+3. Put the same four values in `backend/.env` and run `python scripts/strava_webhook.py https://<your-api>.onrender.com` once, so Pacer hears when someone revokes access on Strava.
+
+Leave the variables empty and the Strava card simply doesn't appear. Check [Strava's API Agreement](https://www.strava.com/legal/api) before inviting other people: new apps are limited to very few athletes until Strava reviews them.
+
+### 6. Deploy the front end to Vercel
 On Vercel, go to **Add New → Project**, import this repo, set **Root Directory** to `frontend`, and add the three `VITE_*` variables. Point `VITE_API_URL` at the Render URL. `vercel.json` sends every path to the app, so links like `/runs/<id>` work on refresh. In Supabase, go to **Authentication → URL Configuration** and set the Site URL to the Vercel address, so sign-up confirmation emails link back to the app.
 
 ## Tests and lint
@@ -114,6 +126,8 @@ The projection carries your recent trend forward, but at no more than 1% faster 
 
 - **Manual entry:** no file needed. Enter distance, time and date (useful for treadmill runs without a watch). Pace is distance ÷ time, and an implausible pace (faster than 1:30/km or slower than 30:00/km) is rejected as a likely typo. Manual runs count towards weekly distance, trends and training load, and a manual race counts for prediction. They have no splits or best efforts.
 
+- **Strava:** connect on the Account page, then **Sync**. Strava's API has no GPX download, so Pacer rebuilds a GPX from each run's recorded streams (position, time, altitude, heart rate) and treats it exactly like an upload. Runs without GPS (treadmill, virtual) come in with distance and time, like a manual entry. Rides and other sports are skipped, and so is a run you already uploaded yourself (same start within a minute and distance within 3%).
+
 - **GPX:** activity exports from a watch or app (the file needs timestamps). Paused points (speed under 0.5 m/s, or a gap of more than 60 s) count toward elapsed time but not moving time. GPS spikes that imply a speed over 12 m/s are dropped. GPS wobble is filtered (distance counts in steps of 5 m or more) and climb uses a 1 m threshold; on a real 15 km run this matches Strava to within 0.1%.
 - **CSV:** one row per lap or interval of a single run. It needs a distance column (`distance_m`, `distance_km`, `miles`, or `distance`, which is read as km when every value is 50 or less) and a time column (`time`, `duration`, and so on, in seconds or `mm:ss` / `hh:mm:ss`). An `avg_hr` column is optional. CSVs have no date, so pass `started_at` when you upload. See `backend/tests/data/treadmill.csv`.
 
@@ -121,3 +135,4 @@ The projection carries your recent trend forward, but at no more than 1% faster 
 - User ids come only from the verified JWT. Both the newer asymmetric (ES256 via JWKS) and legacy HS256 Supabase tokens are supported.
 - Row level security is enabled on `runs`, so Supabase's public REST API can't read it. Only this API can.
 - Raw files go in a private bucket under `{user_id}/{sha256}`. The secret key never leaves the server.
+- Strava tokens are encrypted at rest (Fernet). Disconnecting, deleting your account, or revoking access on Strava deletes every run imported from it. Strava's webhook calls aren't signed, so a "revoked" event is only acted on after confirming the token really no longer works.

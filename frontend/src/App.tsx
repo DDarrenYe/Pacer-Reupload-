@@ -11,6 +11,7 @@ import Welcome from "./pages/Welcome";
 const RunDetail = lazy(() => import("./pages/RunDetail"));
 const Trends = lazy(() => import("./pages/Trends"));
 const Goals = lazy(() => import("./pages/Goals"));
+const StravaCallback = lazy(() => import("./pages/StravaCallback"));
 const Account = lazy(() => import("./pages/Account"));
 const Feedback = lazy(() => import("./pages/Feedback"));
 
@@ -65,6 +66,7 @@ export default function App() {
             <Route path="/runs/:id" element={protect(<RunDetail />)} />
             <Route path="/trends" element={protect(<Trends />)} />
             <Route path="/goals" element={protect(<Goals />)} />
+            <Route path="/strava/callback" element={protect(<StravaCallback />)} />
             <Route path="/account" element={protect(<Account />)} />
             <Route path="/feedback" element={protect(<Feedback />)} />
             <Route path="*" element={<main><p>Page not found. <Link to="/">Go to your runs</Link></p></main>} />

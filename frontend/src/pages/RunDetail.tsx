@@ -6,6 +6,7 @@ import { useAuth } from "../auth";
 import { LineChart } from "../components/charts";
 import ManualRunForm from "../components/ManualRunForm";
 import { describeDrift, formatDate, formatDistance, formatDuration, formatPace } from "../format";
+import { stravaActivityUrl } from "../strava";
 import type { RunDetail as RunDetailType, Split } from "../types";
 import { useSlowNotice } from "../useSlowNotice";
 import { useTitle } from "../useTitle";
@@ -74,8 +75,16 @@ export default function RunDetail() {
         <h1>{run.name ?? "Untitled run"}</h1>
         <p className="muted">
           {formatDate(run.started_at)} · {run.surface}
-          {run.source === "manual" && " · entered manually"}
+          {run.source === "manual" && (run.strava_activity_id === null ? " · entered manually" : " · no GPS")}
           {run.is_race && " · race"}
+          {run.strava_activity_id !== null && (
+            <>
+              {" · "}
+              <a className="strava-link" href={stravaActivityUrl(run.strava_activity_id)} target="_blank" rel="noreferrer">
+                View on Strava
+              </a>
+            </>
+          )}
         </p>
       </header>
 

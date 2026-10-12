@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 
 import { api } from "../api";
 import { useAuth } from "../auth";
 import ManualRunForm from "../components/ManualRunForm";
 import UploadForm from "../components/UploadForm";
 import { formatDate, formatDistance, formatDuration, formatPace } from "../format";
-import type { Run } from "../types";
+import { describeSync } from "../strava";
+import type { Run, StravaStatus } from "../types";
 import { useSlowNotice } from "../useSlowNotice";
 import { useTitle } from "../useTitle";
 
@@ -14,7 +15,14 @@ export default function Runs() {
   const [runs, setRuns] = useState<Run[] | null>(null);
   const [mode, setMode] = useState<"file" | "manual">("file");
   const navigate = useNavigate();
+  const location = useLocation();
   const { demo } = useAuth();
+  const [strava, setStrava] = useState<StravaStatus | null>(null);
+  const [stravaSync, setStravaSync] = useState<{ busy: boolean; message: string | null }>({
+    busy: false,
+    // Set by the Strava callback page after connecting and the first import.
+    message: (location.state as { notice?: string } | null)?.notice ?? null,
+  });
   useTitle("Runs");
   const [error, setError] = useState<string | null>(null);
   const [recalc, setRecalc] = useState<{ busy: boolean; message: string | null }>({ busy: false, message: null });
@@ -24,6 +32,19 @@ export default function Runs() {
     api.listRuns().then(setRuns, (e: Error) => setError(e.message));
   }, []);
   useEffect(load, [load]);
+  useEffect(() => {
+    if (!demo) api.stravaStatus().then(setStrava, () => setStrava(null));
+  }, [demo]);
+
+  async function syncStrava() {
+    setStravaSync({ busy: true, message: null });
+    try {
+      setStravaSync({ busy: false, message: describeSync(await api.stravaSync()) });
+      load();
+    } catch (e) {
+      setStravaSync({ busy: false, message: (e as Error).message });
+    }
+  }
 
   async function recalculateAll() {
     if (!confirm("Recalculate every run from its original file? This picks up the latest fixes to distance, pace and splits.")) return;
@@ -64,6 +85,7 @@ export default function Runs() {
           </p>
         )}
         {recalc.message && <p className="info" role="status">{recalc.message}</p>}
+        {stravaSync.message && <p className="info" role="status">{stravaSync.message}</p>}
         {runs && runs.length > 0 && (
           <div className="table-scroll">
             <table>
@@ -85,6 +107,7 @@ export default function Runs() {
                       <Link to={`/runs/${r.id}`}>{r.name ?? "Untitled run"}</Link>
                       <span className="tag">{r.surface}</span>
                       {r.is_race && <span className="tag">race</span>}
+                      {r.strava_activity_id !== null && <span className="tag">Strava</span>}
                     </td>
                     <td className="num">{formatDistance(r.distance_m)}</td>
                     <td className="num">{formatDuration(r.moving_time_s)}</td>
@@ -96,11 +119,18 @@ export default function Runs() {
             </table>
           </div>
         )}
-        {runs && runs.length > 0 && !demo && (
+        {!demo && (strava?.connected || (runs && runs.length > 0)) && (
           <div className="actions" style={{ marginTop: 12 }}>
-            <button className="secondary" onClick={recalculateAll} disabled={recalc.busy}>
-              {recalc.busy ? "Recalculating…" : "Recalculate all runs"}
-            </button>
+            {strava?.connected && (
+              <button onClick={syncStrava} disabled={stravaSync.busy}>
+                {stravaSync.busy ? "Syncing…" : "Sync from Strava"}
+              </button>
+            )}
+            {runs && runs.length > 0 && (
+              <button className="secondary" onClick={recalculateAll} disabled={recalc.busy}>
+                {recalc.busy ? "Recalculating…" : "Recalculate all runs"}
+              </button>
+            )}
           </div>
         )}
       </section>

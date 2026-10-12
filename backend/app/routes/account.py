@@ -6,8 +6,9 @@ from sqlalchemy import delete, func, select
 
 from app.auth import CurrentUserId, WritableUserId, is_demo_user
 from app.db import DbSession
-from app.models import Feedback, Goal, Run
+from app.models import Feedback, Goal, Run, StravaConnection
 from app.storage import StorageDep, StorageError
+from app.strava import OptionalStravaDep, deauthorize_quietly
 from app.supabase_admin import AdminDep, AdminError
 
 logger = logging.getLogger(__name__)
@@ -23,9 +24,19 @@ def get_account(user_id: CurrentUserId, db: DbSession) -> dict:
 
 @router.delete("/account", status_code=204)
 def delete_account(
-    user_id: WritableUserId, db: DbSession, storage: StorageDep, admin: AdminDep
+    user_id: WritableUserId,
+    db: DbSession,
+    storage: StorageDep,
+    admin: AdminDep,
+    strava: OptionalStravaDep,
 ) -> Response:
-    """Delete everything: runs (with splits and best efforts), files, goals, feedback, login."""
+    """Delete everything: runs (with splits and best efforts), files, goals, feedback,
+    the Strava connection (revoked on Strava's side too) and the login."""
+    conn = db.scalar(select(StravaConnection).where(StravaConnection.user_id == user_id))
+    if conn is not None:
+        if strava is not None:
+            deauthorize_quietly(conn, strava)
+        db.delete(conn)
     runs = db.scalars(select(Run).where(Run.user_id == user_id)).all()
     for run in runs:
         if run.raw_file_key:

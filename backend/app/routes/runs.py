@@ -40,6 +40,39 @@ def create_run(
 ) -> Run:
     """Upload a GPX or CSV file and save it as one of your runs, with its analytics."""
     suffix, content = read_upload(file)
+    return save_file_run(
+        db,
+        storage,
+        user_id,
+        suffix=suffix,
+        content=content,
+        name=name or file.filename,
+        surface=surface,
+        is_race=is_race,
+        started_at=started_at,
+        notes=notes,
+    )
+
+
+def save_file_run(
+    db: Session,
+    storage: Storage,
+    user_id: uuid.UUID,
+    *,
+    suffix: str,
+    content: bytes,
+    name: str | None,
+    surface: str | None = None,
+    is_race: bool = False,
+    started_at: datetime | None = None,
+    notes: str | None = None,
+    strava_activity_id: int | None = None,
+) -> Run:
+    """Parse a file, store the original and save the run with its analytics.
+
+    Shared by uploads and the Strava import. Raises 409 for a file already saved and
+    422 for one that can't be parsed.
+    """
     summary, series = parse_file(suffix, content)
 
     file_hash = hashlib.sha256(content).hexdigest()
@@ -52,7 +85,7 @@ def create_run(
 
     run = Run(
         user_id=user_id,
-        name=name or file.filename,
+        name=name,
         started_at=summary.start_time or started_at or datetime.now(UTC),
         source=summary.source,
         surface=surface or DEFAULT_SURFACE[summary.source],
@@ -60,6 +93,7 @@ def create_run(
         raw_file_key=key,
         file_hash=file_hash,
         notes=notes,
+        strava_activity_id=strava_activity_id,
     )
     _apply_summary(run, summary)
     _apply_analytics(run, series)
