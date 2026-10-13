@@ -293,6 +293,7 @@ button.disclosure:focus-visible { outline: 2px solid var(--accent); outline-offs
 .rank-list li { display: flex; align-items: center; gap: 10px; }
 .rank-badge { display: inline-flex; align-items: center; gap: 8px; text-decoration: none; color: var(--text-primary); font-weight: 700; }
 .rank-list-text { display: grid; }
+.rank-notes { margin: 16px 0 0; }
 /* Runner card */
 .runner-card { display: flex; gap: 24px; align-items: center; flex-wrap: wrap; }
 .runner-rank { display: grid; justify-items: center; gap: 2px; min-width: 110px; text-align: center; }

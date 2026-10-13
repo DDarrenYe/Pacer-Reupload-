@@ -47,25 +47,48 @@ export function RankHeader({ overall }: { overall: OverallRank }) {
   );
 }
 
-function AllRanks() {
+function AllRanks({ sources }: { sources: Comparison["sources"] }) {
   const [open, setOpen] = useState(false);
   return (
     <div>
-      <button className="link" aria-expanded={open} aria-controls="all-ranks" onClick={() => setOpen(!open)}>
+      <button className="link" aria-expanded={open} aria-controls="all-ranks rank-notes" onClick={() => setOpen(!open)}>
         {open ? "Hide ranks ▴" : "See all ranks ▾"}
       </button>
       {open && (
-        <ol id="all-ranks" className="rank-list">
-          {RANKS.map((r) => (
-            <li key={r}>
-              <RankMedal rank={r} size={40} />
-              <span className="rank-list-text">
-                <strong>{r}</strong>
-                <span className="muted small">{rankRange(r)} age grade</span>
-              </span>
+        <>
+          <ol id="all-ranks" className="rank-list">
+            {RANKS.map((r) => (
+              <li key={r}>
+                <RankMedal rank={r} size={40} />
+                <span className="rank-list-text">
+                  <strong>{r}</strong>
+                  <span className="muted small">{rankRange(r)} age grade</span>
+                </span>
+              </li>
+            ))}
+          </ol>
+          <ul id="rank-notes" className="facts small rank-notes">
+            <li>
+              <strong>Ranks</strong> come from age grade, so they're fair across ages, sexes and distances. Your rank
+              is your best age grade from a time you've actually run at 5k, 10k, half or marathon, or a prediction
+              at a distance you've run near (long predictions don't count).
             </li>
-          ))}
-        </ol>
+            <li>
+              <strong>Age grade</strong> compares your time with the best expected for your age and sex (100% is
+              world-record level), so it's fair across ages and distances. Standards: {sources.age_grade}.
+            </li>
+            {sources.percentiles ? (
+              <li>
+                <strong>Faster than</strong> compares your age grade with finishers of your sex and age group in 2023 US
+                marathons ({sources.finishers?.toLocaleString()} finishers in all; {sources.percentiles}). People who
+                race are faster than runners in general, and shorter races draw more casual runners, so treat the 5k
+                to half marathon percentiles as a rough guide.
+              </li>
+            ) : (
+              <li>Percentiles against other runners are coming soon.</li>
+            )}
+          </ul>
+        </>
       )}
     </div>
   );
@@ -153,28 +176,7 @@ export default function CompareCard() {
               </tbody>
             </table>
           </div>
-          <AllRanks />
-          <ul className="facts small">
-            <li>
-              <strong>Ranks</strong> come from age grade, so they're fair across ages, sexes and distances. Your rank
-              is your best age grade from a time you've actually run at 5k, 10k, half or marathon, or a prediction
-              at a distance you've run near (long predictions don't count).
-            </li>
-            <li>
-              <strong>Age grade</strong> compares your time with the best expected for your age and sex (100% is
-              world-record level), so it's fair across ages and distances. Standards: {sources.age_grade}.
-            </li>
-            {sources.percentiles ? (
-              <li>
-                <strong>Faster than</strong> compares your age grade with finishers of your sex and age group in 2023 US
-                marathons ({sources.finishers?.toLocaleString()} finishers in all; {sources.percentiles}). People who
-                race are faster than runners in general, and shorter races draw more casual runners, so treat the 5k
-                to half marathon percentiles as a rough guide.
-              </li>
-            ) : (
-              <li>Percentiles against other runners are coming soon.</li>
-            )}
-          </ul>
+          <AllRanks sources={sources} />
         </>
       )}
     </section>
