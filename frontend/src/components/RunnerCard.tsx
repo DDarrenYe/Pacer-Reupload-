@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { api } from "../api";
 import { formatDuration, formatPace } from "../format";
 import { averagePace, monthDistanceM } from "../runnerStats";
+import { TITLE_DESCRIPTIONS } from "../titles";
 import type { Run, RunnerCard as Card } from "../types";
 import RankMedal from "./RankMedal";
 
@@ -49,10 +50,7 @@ export default function RunnerCard({ runs }: { runs: Run[] }) {
                 far).
               </p>
             ) : (
-              <>
-                <span className="runner-title">{card.title.name}</span>
-                <p className="muted small">{card.title.reason}</p>
-              </>
+              <TitleBadge name={card.title.name} reason={card.title.reason} />
             ))}
         </div>
         <div className="runner-stats">
@@ -71,6 +69,40 @@ export default function RunnerCard({ runs }: { runs: Run[] }) {
         )}
       </div>
     </section>
+  );
+}
+
+/** The title pill; click it to open what the archetype means and why you got it. */
+function TitleBadge({ name, reason }: { name: string; reason: string }) {
+  const [open, setOpen] = useState(false);
+  const about = TITLE_DESCRIPTIONS[name];
+  return (
+    <>
+      <button
+        className="runner-title"
+        aria-expanded={open}
+        aria-controls="runner-title-about"
+        onClick={() => setOpen(!open)}
+      >
+        {name}
+        <span aria-hidden="true">{open ? " ▴" : " ▾"}</span>
+      </button>
+      {open ? (
+        <div id="runner-title-about" className="runner-title-about">
+          {about && (
+            <>
+              <span className="tile-label">{about.group}</span>
+              <p>{about.description}</p>
+            </>
+          )}
+          <p className="muted small">
+            <strong>Why you:</strong> {reason}
+          </p>
+        </div>
+      ) : (
+        <p className="muted small">{reason}</p>
+      )}
+    </>
   );
 }
 
