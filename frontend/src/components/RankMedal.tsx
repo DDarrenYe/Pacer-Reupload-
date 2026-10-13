@@ -2,103 +2,139 @@ import { useId } from "react";
 
 import type { RankName } from "../ranks";
 
-interface Palette {
+/** Each rank is an army-style insignia struck in its own material, from a private's
+ * single chevron to a colonel's eagle:
+ *   Bronze      Private               1 chevron
+ *   Silver      Private First Class   1 chevron, 1 rocker
+ *   Gold        Corporal              2 chevrons
+ *   Platinum    Sergeant              3 chevrons
+ *   Diamond     First Sergeant        3 chevrons, 2 rockers, a diamond
+ *   Pace Setter Lieutenant Colonel    oak leaf
+ *   Apex        Colonel               eagle
+ * The shape changes at every rank, not just the colour, so they stay distinct in
+ * greyscale and for colour-blind runners. */
+interface Material {
   light: string;
+  mid: string;
   dark: string;
-  ribbon: string;
+  edge: string;
 }
 
-const PALETTES: Record<RankName, Palette> = {
-  Bronze: { light: "#f0b47c", dark: "#8a4b20", ribbon: "#a3582a" },
-  Silver: { light: "#f4f6f8", dark: "#7f8a95", ribbon: "#5f6b78" },
-  Gold: { light: "#ffe58f", dark: "#b07d05", ribbon: "#c0392b" },
-  Platinum: { light: "#d9f7f3", dark: "#2f8f88", ribbon: "#1f6f6a" },
-  Diamond: { light: "#d8ecff", dark: "#2f62d0", ribbon: "#24479c" },
-  "Pace Setter": { light: "#ffc2a8", dark: "#c0321a", ribbon: "#f08c00" },
-  Apex: { light: "#ecd5ff", dark: "#6a2fd0", ribbon: "#f2b705" },
+const MATERIALS: Record<RankName, Material> = {
+  Bronze: { light: "#f3c08e", mid: "#c07a3c", dark: "#7a4116", edge: "#5a2e0e" },
+  Silver: { light: "#ffffff", mid: "#c4cad1", dark: "#7c8792", edge: "#545e69" },
+  Gold: { light: "#fff3b0", mid: "#e2b22c", dark: "#a2710a", edge: "#6e4c05" },
+  Platinum: { light: "#f7fffd", mid: "#b9dcd8", dark: "#6f9e99", edge: "#3f6b67" },
+  Diamond: { light: "#f2faff", mid: "#9ccbff", dark: "#3d7fe0", edge: "#1f4f9e" },
+  "Pace Setter": { light: "#ffd9a3", mid: "#f0782a", dark: "#b23a0c", edge: "#7a2306" },
+  Apex: { light: "#f0dcff", mid: "#9b5cf0", dark: "#4c1d95", edge: "#2e0f63" },
 };
 
-const RIM = "rgba(0,0,0,0.35)";
-const EMBLEM = "#ffffff";
+const chevron = (y: number) => `M8 ${y + 14} L32 ${y} L56 ${y + 14} L56 ${y + 20} L32 ${y + 6} L8 ${y + 20} Z`;
+const rocker = (y: number) => `M8 ${y} Q32 ${y + 10} 56 ${y} L56 ${y + 5} Q32 ${y + 15} 8 ${y + 5} Z`;
 
-/** A medal for each rank. Every rank has its own shape and emblem as well as colour,
- * so they stay distinct in greyscale and for colour-blind runners. */
+const OAK_LEAF =
+  "M32 5 C36 7 38 11 37 14 C42 12 46 15 44 20 C49 20 51 25 47 28 C52 30 52 36 46 37 " +
+  "C49 41 47 46 41 45 C41 49 37 52 34 50 L33.5 59 L30.5 59 L30 50 C27 52 23 49 23 45 " +
+  "C17 46 15 41 18 37 C12 36 12 30 17 28 C13 25 15 20 20 20 C18 15 22 12 27 14 C26 11 28 7 32 5 Z";
+const OAK_VEINS =
+  "M32 11 L32 52 M32 20 L24 17 M32 20 L40 17 M32 28 L21 25 M32 28 L43 25 M32 36 L21 35 M32 36 L43 35 M32 43 L26 45 M32 43 L38 45";
+
+const EAGLE_WING_LEFT =
+  "M29 27 C23 19 13 14 2 15 L7 19 L2 21 L8 24 L3 27 L10 29 L6 32 L13 33 L10 36 L17 36 C22 35 26 33 29 31 Z";
+const EAGLE_BODY = "M27 25 L37 25 L37 39 C37 45 32 49 32 49 C32 49 27 45 27 39 Z";
+const EAGLE_HEAD = "M30 25 C29 19 32 15 36 16 C38 16.5 40 18 41 20 L45 21.5 L40.5 23 C39 24.5 37 25 35 25 Z";
+const EAGLE_TAIL = "M28 46 L26 58 L30 55 L32 60 L34 55 L38 58 L36 46 Z";
+
 export default function RankMedal({ rank, size = 48 }: { rank: RankName; size?: number }) {
   const id = useId().replace(/:/g, "");
-  const p = PALETTES[rank];
-  const fill = `url(#${id}-face)`;
+  const m = MATERIALS[rank];
+  const metal = { fill: `url(#${id}-metal)`, stroke: m.edge, strokeWidth: 1.4, strokeLinejoin: "round" as const };
+  const engrave = { fill: "none", stroke: m.edge, strokeWidth: 1, strokeLinecap: "round" as const, opacity: 0.7 };
   return (
-    <svg width={size} height={size * 1.25} viewBox="0 0 64 80" role="img" aria-label={`${rank} rank`}>
+    <svg width={size} height={size} viewBox="0 0 64 64" role="img" aria-label={`${rank} rank`}>
       <defs>
-        <linearGradient id={`${id}-face`} x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor={p.light} />
-          <stop offset="1" stopColor={p.dark} />
+        <linearGradient id={`${id}-metal`} x1="0" y1="0" x2="0.35" y2="1">
+          <stop offset="0" stopColor={m.light} />
+          <stop offset="0.45" stopColor={m.mid} />
+          <stop offset="1" stopColor={m.dark} />
         </linearGradient>
       </defs>
-      {/* Ribbon */}
-      <path d="M18 2 L30 2 L36 26 L26 30 Z" fill={p.ribbon} />
-      <path d="M46 2 L34 2 L28 26 L38 30 Z" fill={p.ribbon} opacity="0.85" />
-      <Face rank={rank} fill={fill} />
-      <Emblem rank={rank} stroke={p.dark} />
+      <Insignia rank={rank} metal={metal} engrave={engrave} light={m.light} edge={m.edge} />
     </svg>
   );
 }
 
-function Face({ rank, fill }: { rank: RankName; fill: string }) {
-  switch (rank) {
-    case "Platinum":
-      return <path d="M32 26 L51 37 L51 59 L32 70 L13 59 L13 37 Z" fill={fill} stroke={RIM} strokeWidth="1.5" />;
-    case "Diamond":
-      return (
-        <g stroke={RIM} strokeWidth="1.5" strokeLinejoin="round">
-          <path d="M20 30 L44 30 L54 42 L32 74 L10 42 Z" fill={fill} />
-          <path d="M10 42 L54 42 M20 30 L26 42 L32 30 L38 42 L44 30 M26 42 L32 74 L38 42" fill="none" stroke="rgba(255,255,255,0.55)" strokeWidth="1.2" />
-        </g>
-      );
-    case "Pace Setter":
-      return <path d="M32 26 L52 32 L52 50 C52 62 43 70 32 75 C21 70 12 62 12 50 L12 32 Z" fill={fill} stroke={RIM} strokeWidth="1.5" />;
-    case "Apex":
-      return (
-        <g>
-          <circle cx="32" cy="52" r="20" fill={fill} stroke={RIM} strokeWidth="1.5" />
-          {/* Crown */}
-          <path d="M18 34 L22 22 L27 30 L32 18 L37 30 L42 22 L46 34 Z" fill="#f5c542" stroke="#9a6b00" strokeWidth="1.2" strokeLinejoin="round" />
-        </g>
-      );
-    default:
-      return <circle cx="32" cy="50" r="21" fill={fill} stroke={RIM} strokeWidth="1.5" />;
-  }
-}
+type Paint = Record<string, string | number>;
 
-function Emblem({ rank, stroke }: { rank: RankName; stroke: string }) {
-  const common = { fill: EMBLEM, stroke, strokeWidth: 1.2, strokeLinejoin: "round" as const };
-  const chevron = (y: number) => <path key={y} d={`M22 ${y + 6} L32 ${y} L42 ${y + 6} L42 ${y + 10} L32 ${y + 4} L22 ${y + 10} Z`} {...common} />;
+function Insignia({
+  rank,
+  metal,
+  engrave,
+  light,
+  edge,
+}: {
+  rank: RankName;
+  metal: Paint;
+  engrave: Paint;
+  light: string;
+  edge: string;
+}) {
   switch (rank) {
     case "Bronze":
-      return chevron(45);
+      return <path d={chevron(21)} {...metal} />;
     case "Silver":
-      return <>{[40, 50].map(chevron)}</>;
+      return (
+        <>
+          <path d={chevron(13)} {...metal} />
+          <path d={rocker(38)} {...metal} />
+        </>
+      );
     case "Gold":
-      return <>{[36, 45, 54].map(chevron)}</>;
+      return (
+        <>
+          <path d={chevron(14)} {...metal} />
+          <path d={chevron(25)} {...metal} />
+        </>
+      );
     case "Platinum":
-      return <path d="M32 37 L35.5 45 L44 45.6 L37.5 51 L39.6 59.5 L32 55 L24.4 59.5 L26.5 51 L20 45.6 L28.5 45 Z" {...common} />;
+      return (
+        <>
+          {[8, 18, 28].map((y) => <path key={y} d={chevron(y)} {...metal} />)}
+        </>
+      );
     case "Diamond":
-      return <path d="M32 44 L36 49 L32 56 L28 49 Z" {...common} />;
+      return (
+        <>
+          {[2, 10, 18].map((y) => <path key={y} d={chevron(y)} {...metal} />)}
+          {[42, 50].map((y) => <path key={y} d={rocker(y)} {...metal} />)}
+          {/* The first sergeant's diamond, cut like a gem */}
+          <path d="M32 26 L38 33 L32 41 L26 33 Z" {...metal} />
+          <path d="M26 33 L38 33 M32 26 L30 33 L32 41 M32 26 L34 33" stroke={light} strokeWidth="0.8" fill="none" opacity="0.9" />
+        </>
+      );
     case "Pace Setter":
       return (
-        <g>
-          {/* Wings */}
-          <path d="M14 44 C20 42 24 44 27 48 C22 49 18 48 14 44 Z M50 44 C44 42 40 44 37 48 C42 49 46 48 50 44 Z" {...common} />
-          {/* Lightning bolt */}
-          <path d="M34 34 L25 51 L31 51 L28 66 L39 46 L33 46 L37 34 Z" {...common} />
-        </g>
+        <>
+          <path d={OAK_LEAF} {...metal} />
+          <path d={OAK_VEINS} {...engrave} />
+        </>
       );
     case "Apex":
       return (
-        <g>
-          <path d="M19 62 L28 46 L32 52 L37 43 L45 62 Z" {...common} />
-          <circle cx="40" cy="41" r="2.4" fill={EMBLEM} stroke={stroke} strokeWidth="1" />
-        </g>
+        <>
+          <path d={EAGLE_WING_LEFT} {...metal} />
+          <path d={EAGLE_WING_LEFT} transform="translate(64 0) scale(-1 1)" {...metal} />
+          <path d={EAGLE_TAIL} {...metal} />
+          <path d={EAGLE_BODY} {...metal} />
+          {/* Shield on the breast */}
+          <path d="M29 28 L35 28 L35 37 C35 40 32 43 32 43 C32 43 29 40 29 37 Z" fill={light} opacity="0.55" stroke={edge} strokeWidth="0.8" />
+          <path d="M30.5 31 L30.5 40 M32 31 L32 42 M33.5 31 L33.5 40" {...engrave} />
+          <path d={EAGLE_HEAD} {...metal} />
+          <circle cx="37" cy="19.5" r="1" fill={edge} />
+          {/* Feather lines */}
+          <path d="M26 29 L12 22 M26 31 L10 28 M24 33 L13 33 M38 29 L52 22 M38 31 L54 28 M40 33 L51 33" {...engrave} />
+        </>
       );
   }
 }

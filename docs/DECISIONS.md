@@ -22,7 +22,7 @@ This file records why the project is built the way it is: the choices I made, wh
 - **Thresholds:** the bottom three split the bulk of real finishers (in the 2023 data the median age grade is about 48% and the 75th percentile about 57%), so Silver is "typical" and Gold is "better than most". The top four line up with the official classes (local 60%, regional 70%, national 80%, world 90%), so a Diamond means what an age-grading expert would expect.
 - **Your rank** is your best age grade at a distance you've run near. A marathon predicted from a 5k is extrapolated and doesn't count, unless it's all there is.
 - Each rank shows the time that reaches the next one (standard ÷ next threshold), which turns a label into a target.
-- The medals differ in **shape and emblem**, not just colour (chevrons, a star, a gem, a winged bolt, a crown), so they're distinct in greyscale and for colour-blind runners, and the rank name is always written next to them.
+- The badges are army-style rank insignia struck in each rank's material: Bronze is a private's single chevron, Silver a private first class (chevron and rocker), Gold a corporal (two chevrons), Platinum a sergeant (three), Diamond a first sergeant (three chevrons, two rockers and a diamond), Pace Setter a lieutenant colonel's oak leaf and Apex a colonel's eagle. The shape changes at every rank, not just the colour, so they're distinct in greyscale and for colour-blind runners, and the rank name is always written next to them.
 
 ### What's deliberately left out
 - **Weight:** no public dataset links bodyweight to race times. A percentile "for your weight" would be invented, so it isn't asked for.
