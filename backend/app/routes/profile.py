@@ -6,11 +6,12 @@ from pydantic import BaseModel, Field, field_validator
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.analytics.compare import best_row, compare, percentile_table
+from app.analytics.compare import best_rank, compare, percentile_table
 from app.analytics.data import load_efforts
+from app.analytics.runner_card import personal_bests
 from app.auth import CurrentUserId, WritableUserId
 from app.db import DbSession
-from app.models import Profile
+from app.models import Profile, StravaConnection
 
 router = APIRouter(tags=["profile"])
 
@@ -19,6 +20,7 @@ MIN_AGE = 5
 
 
 class ProfileIn(BaseModel):
+    display_name: str | None = Field(default=None, max_length=60)
     birth_year: int | None = Field(default=None)
     sex: Literal["female", "male"] | None = None
 
@@ -30,8 +32,15 @@ class ProfileIn(BaseModel):
             raise ValueError(f"Year of birth should be between {MIN_BIRTH_YEAR} and {latest}.")
         return year
 
+    @field_validator("display_name")
+    @classmethod
+    def _tidy(cls, name: str | None) -> str | None:
+        name = " ".join(name.split()) if name else None
+        return name or None
+
 
 class ProfileOut(BaseModel):
+    display_name: str | None
     birth_year: int | None
     sex: Literal["female", "male"] | None
     age: int | None
@@ -46,6 +55,7 @@ def get_profile(user_id: CurrentUserId, db: DbSession) -> ProfileOut:
 def put_profile(body: ProfileIn, user_id: WritableUserId, db: DbSession) -> ProfileOut:
     """Save your year of birth and sex (both optional), used only for comparisons."""
     profile = _profile(db, user_id) or Profile(user_id=user_id)
+    profile.display_name = body.display_name
     profile.birth_year = body.birth_year
     profile.sex = body.sex
     db.add(profile)
@@ -68,19 +78,7 @@ def comparison(user_id: CurrentUserId, db: DbSession) -> dict:
     if profile.age is None or profile.sex is None:
         return {"profile": profile, "rows": [], "overall": None, "sources": sources}
     rows = compare(load_efforts(db, user_id), profile.age, profile.sex, date.today())
-    best = best_row(rows)
-    overall = None
-    if best is not None:
-        overall = {
-            "rank": best.rank.name,
-            "tier": best.rank.tier,
-            "distance": best.name,
-            "age_grade": best.age_grade,
-            "next_rank": best.rank.next_name,
-            "next_rank_age_grade": best.rank.next_floor,
-            "next_rank_time_s": best.next_rank_time_s,
-            "progress_pct": best.rank.progress(best.age_grade),
-        }
+    overall = _overall(db, user_id, profile.age, profile.sex, rows)
     return {
         "profile": profile,
         "overall": overall,
@@ -105,12 +103,65 @@ def comparison(user_id: CurrentUserId, db: DbSession) -> dict:
     }
 
 
+@router.get("/runner-card")
+def runner_card(user_id: CurrentUserId, db: DbSession) -> dict:
+    """Your name, best rank and personal bests at 5k, 10k, half and marathon (only the
+    distances you've actually run)."""
+    stored = _profile(db, user_id)
+    profile = _out(stored)
+    name = profile.display_name
+    if name is None:  # fall back to the name on a connected Strava account
+        name = db.scalar(
+            select(StravaConnection.athlete_name).where(StravaConnection.user_id == user_id)
+        )
+    rank = None
+    if profile.age is not None and profile.sex is not None:
+        rank = _overall(db, user_id, profile.age, profile.sex)
+    return {
+        "name": name,
+        "rank": rank,
+        "bests": [
+            {
+                "name": pb.name,
+                "distance_m": pb.distance_m,
+                "time_s": pb.time_s,
+                "run_id": str(pb.run_id),
+                "date": pb.started_at.date().isoformat(),
+            }
+            for pb in personal_bests(db, user_id)
+        ],
+    }
+
+
+def _overall(db: Session, user_id, age: int, sex: str, rows=None) -> dict | None:
+    """Your rank, from your best real time or prediction (see compare.best_rank)."""
+    if rows is None:
+        rows = compare(load_efforts(db, user_id), age, sex, date.today())
+    bests = [(pb.name, pb.distance_m, pb.time_s) for pb in personal_bests(db, user_id)]
+    best = best_rank(rows, bests, age, sex)
+    if best is None:
+        return None
+    return {
+        "rank": best.rank.name,
+        "tier": best.rank.tier,
+        "distance": best.distance,
+        "age_grade": best.age_grade,
+        "source": best.source,
+        "next_rank": best.rank.next_name,
+        "next_rank_age_grade": best.rank.next_floor,
+        "next_rank_time_s": best.next_rank_time_s,
+        "progress_pct": best.rank.progress(best.age_grade),
+    }
+
+
 def _profile(db: Session, user_id) -> Profile | None:
     return db.scalar(select(Profile).where(Profile.user_id == user_id))
 
 
 def _out(profile: Profile | None) -> ProfileOut:
     if profile is None:
-        return ProfileOut(birth_year=None, sex=None, age=None)
+        return ProfileOut(display_name=None, birth_year=None, sex=None, age=None)
     age = date.today().year - profile.birth_year if profile.birth_year else None
-    return ProfileOut(birth_year=profile.birth_year, sex=profile.sex, age=age)
+    return ProfileOut(
+        display_name=profile.display_name, birth_year=profile.birth_year, sex=profile.sex, age=age
+    )

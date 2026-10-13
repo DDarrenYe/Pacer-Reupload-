@@ -14,6 +14,8 @@ class Profile(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
     user_id: Mapped[uuid.UUID] = mapped_column(unique=True)
+    # Shown on your runner card.
+    display_name: Mapped[str | None] = mapped_column(String(60))
     # Year of birth rather than age, so it stays right without editing.
     birth_year: Mapped[int | None]
     # "female" or "male": the age-grading standards exist only for these two.

@@ -188,8 +188,39 @@ def compare(efforts: list[Effort], age: int, sex: str, today: date) -> list[Comp
 
 
 def best_row(rows: list[ComparisonRow]) -> ComparisonRow | None:
-    """The row your rank comes from: your best age grade, ignoring extrapolated
-    distances unless there's nothing else (a marathon guessed from a 5k isn't earned)."""
+    """Your best predicted age grade, ignoring extrapolated distances unless there's
+    nothing else (a marathon guessed from a 5k isn't earned)."""
     graded = [r for r in rows if r.age_grade is not None]
     solid = [r for r in graded if not r.extrapolated] or graded
     return max(solid, key=lambda r: r.age_grade, default=None)
+
+
+@dataclass(frozen=True)
+class BestRank:
+    distance: str  # e.g. "5k"
+    age_grade: float
+    rank: Rank
+    next_rank_time_s: float | None
+    source: str  # "best time" (a time you actually ran) or "prediction"
+
+
+def best_rank(
+    rows: list[ComparisonRow], bests: list[tuple[str, float, float]], age: int, sex: str
+) -> BestRank | None:
+    """Your rank: the best age grade from either a time you've actually run at a standard
+    distance (name, distance_m, time_s) or a prediction at a distance you've run near."""
+    candidates = []
+    row = best_row(rows)
+    if row is not None:
+        candidates.append((row.age_grade, row.name, row.distance_m, "prediction"))
+    for name, distance, time_s in bests:
+        grade = round(age_grade(time_s, distance, age, sex), 1)
+        candidates.append((grade, name, distance, "best time"))
+    if not candidates:
+        return None
+    grade, name, distance, source = max(candidates, key=lambda c: c[0])
+    rank = rank_for(grade)
+    next_time = (
+        round(time_for_grade(rank.next_floor, distance, age, sex), 1) if rank.next_floor else None
+    )
+    return BestRank(name, grade, rank, next_time, source)

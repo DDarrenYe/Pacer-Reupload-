@@ -4,6 +4,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { api } from "../api";
 import { useAuth } from "../auth";
 import ManualRunForm from "../components/ManualRunForm";
+import RunnerCard from "../components/RunnerCard";
 import UploadForm from "../components/UploadForm";
 import { formatDate, formatDistance, formatDuration, formatPace } from "../format";
 import { describeSync } from "../strava";
@@ -74,6 +75,7 @@ export default function Runs() {
 
   return (
     <main>
+      {runs && runs.length > 0 && <RunnerCard runs={runs} />}
       {!demo && <section className="card stack">
         <button
           className="disclosure"

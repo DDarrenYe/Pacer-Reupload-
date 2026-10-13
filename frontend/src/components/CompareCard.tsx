@@ -17,7 +17,8 @@ export function RankHeader({ overall }: { overall: OverallRank }) {
       <div className="rank-body">
         <div className="rank-name">{overall.rank}</div>
         <p className="muted">
-          Your best: {overall.distance} at {overall.age_grade.toFixed(1)}% age grade
+          From your {overall.source === "best time" ? "best" : "predicted"} {overall.distance}:{" "}
+          {overall.age_grade.toFixed(1)}% age grade
         </p>
         {overall.next_rank && overall.progress_pct !== null && overall.next_rank_age_grade !== null ? (
           <>
@@ -156,7 +157,8 @@ export default function CompareCard() {
           <ul className="facts small">
             <li>
               <strong>Ranks</strong> come from age grade, so they're fair across ages, sexes and distances. Your rank
-              is your best age grade at a distance you've actually run near (long predictions don't count).
+              is your best age grade from a time you've actually run at 5k, 10k, half or marathon, or a prediction
+              at a distance you've run near (long predictions don't count).
             </li>
             <li>
               <strong>Age grade</strong> compares your time with the best expected for your age and sex (100% is

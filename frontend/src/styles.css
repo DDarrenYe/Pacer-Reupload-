@@ -293,3 +293,16 @@ button.disclosure:focus-visible { outline: 2px solid var(--accent); outline-offs
 .rank-list li { display: flex; align-items: center; gap: 10px; }
 .rank-badge { display: inline-flex; align-items: center; gap: 8px; text-decoration: none; color: var(--text-primary); font-weight: 700; }
 .rank-list-text { display: grid; }
+/* Runner card */
+.runner-card { display: flex; gap: 24px; align-items: center; flex-wrap: wrap; }
+.runner-rank { display: grid; justify-items: center; gap: 2px; min-width: 110px; text-align: center; }
+.runner-rank strong { font-size: 1.05rem; }
+.runner-body { flex: 1; min-width: 220px; display: grid; gap: 12px; }
+.runner-name { font-size: 1.5rem; margin: 0; }
+.runner-stats { display: flex; gap: 28px; flex-wrap: wrap; }
+.runner-stat-value { font-size: 1.3rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.runner-bests { display: flex; gap: 8px; flex-wrap: wrap; }
+.runner-best { display: grid; padding: 6px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--page); color: var(--text-primary); text-decoration: none; min-width: 84px; }
+.runner-best:hover { border-color: var(--accent); }
+.runner-best-time { font-weight: 700; font-variant-numeric: tabular-nums; }
+@media (max-width: 600px) { .runner-card { justify-content: center; } .runner-rank { width: 100%; } }

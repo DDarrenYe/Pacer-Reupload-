@@ -5,9 +5,10 @@ import type { Profile, Sex } from "../types";
 
 const THIS_YEAR = new Date().getFullYear();
 
-/** My Profile: year of birth and sex, used for "How you compare" on Trends. */
+/** My Profile: your name (for the runner card), and year of birth and sex (for "How you compare" on Trends). */
 export default function ProfileDetailsCard({ readOnly = false }: { readOnly?: boolean }) {
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [name, setName] = useState("");
   const [year, setYear] = useState("");
   const [sex, setSex] = useState<Sex | "">("");
   const [busy, setBusy] = useState(false);
@@ -17,6 +18,7 @@ export default function ProfileDetailsCard({ readOnly = false }: { readOnly?: bo
   useEffect(() => {
     api.profile().then((p) => {
       setProfile(p);
+      setName(p.display_name ?? "");
       setYear(p.birth_year ? String(p.birth_year) : "");
       setSex(p.sex ?? "");
     }, (e: Error) => setError(e.message));
@@ -28,7 +30,11 @@ export default function ProfileDetailsCard({ readOnly = false }: { readOnly?: bo
     setError(null);
     setMessage(null);
     try {
-      const saved = await api.saveProfile({ birth_year: year ? Number(year) : null, sex: sex || null });
+      const saved = await api.saveProfile({
+        display_name: name.trim() || null,
+        birth_year: year ? Number(year) : null,
+        sex: sex || null,
+      });
       setProfile(saved);
       setMessage(saved.age !== null && saved.sex ? "Saved. See how you compare on the Trends page." : "Saved.");
     } catch (err) {
@@ -44,10 +50,21 @@ export default function ProfileDetailsCard({ readOnly = false }: { readOnly?: bo
     <section className="card stack">
       <h2>Your details</h2>
       <p className="muted">
-        Your year of birth and sex are used only to compare your times with runners like you on the Trends page.
-        Leave them blank to skip that.
+        Your name appears on your runner card. Your year of birth and sex are used only to compare your times with
+        runners like you on the Trends page; leave them blank to skip that.
       </p>
       <form className="stack" onSubmit={save}>
+        <label>
+          Name
+          <input
+            value={name}
+            maxLength={60}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Your name"
+            autoComplete="name"
+            disabled={readOnly}
+          />
+        </label>
         <div className="row">
           <label>
             Year of birth

@@ -8,6 +8,7 @@ import type {
   Run,
   RunDetail,
   Profile,
+  RunnerCard,
   RunnerPredictions,
   Sex,
   StravaStatus,
@@ -96,13 +97,14 @@ export const api = {
       body: JSON.stringify({ message, page }),
     }),
   profile: () => request<Profile>("/profile"),
-  saveProfile: (input: { birth_year: number | null; sex: Sex | null }) =>
+  saveProfile: (input: { display_name: string | null; birth_year: number | null; sex: Sex | null }) =>
     request<Profile>("/profile", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(input),
     }),
   comparison: () => request<Comparison>("/comparison"),
+  runnerCard: () => request<RunnerCard>("/runner-card"),
   stravaStatus: () => request<StravaStatus>("/strava"),
   stravaConnect: (code: string, scope: string) =>
     request<{ connected: boolean; athlete_name: string | null }>("/strava/connect", {

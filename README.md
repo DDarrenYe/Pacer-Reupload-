@@ -1,6 +1,6 @@
 # Pacer
 
-Pacer is a running analytics app. Connect Strava or upload a GPX file and see your km splits, how much you fade, your best efforts, weekly trends and predicted race times. Set a race goal (say, a sub-2:10 half in November) and Pacer shows where your trend puts you on race day and what to work on. Add your age and sex to see how you compare with other runners at 5k to marathon.
+Pacer is a running analytics app. Connect Strava or upload a GPX file and see your km splits, how much you fade, your best efforts, weekly trends and predicted race times. Set a race goal (say, a sub-2:10 half in November) and Pacer shows where your trend puts you on race day and what to work on. Add your age and sex to see how you compare with other runners at 5k to marathon, and a runner card at the top of your runs shows your rank badge, average pace, personal bests and this month's distance.
 
 - **Try it:** https://training-analytics-tool.vercel.app (click **Try the demo** to look around with sample runs, no sign-up needed)
 - **API docs:** https://run-analytics-api.onrender.com/docs. It runs on Render's free tier, so the first request after a quiet spell can take up to a minute.
@@ -36,6 +36,7 @@ Python, FastAPI, SQLAlchemy, Alembic, pandas, NumPy, statsmodels, gpxpy · Postg
 | DELETE | `/strava` | ✔ | Disconnect Strava and delete every run imported from it |
 | GET / POST | `/strava/webhook` | – | Strava's webhook: verification, and access revoked on Strava's side |
 | GET / PUT | `/profile` | ✔ | Your year of birth and sex (optional, used only for comparisons) |
+| GET | `/runner-card` | ✔ | Your name, best rank and personal bests at 5k, 10k, half and marathon |
 | GET | `/comparison` | ✔ | Predicted 5k–marathon times with age grade and percentile for your age and sex |
 | GET / POST | `/goals` | ✔ | Your race goals, each with predicted time now, projected race-day time and suggestions / add a goal |
 | PUT / DELETE | `/goals/{id}` | ✔ | Change or delete a goal |

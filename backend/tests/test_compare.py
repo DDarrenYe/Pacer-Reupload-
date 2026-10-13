@@ -129,12 +129,22 @@ def test_compare_without_efforts():
 
 def test_profile_starts_empty_and_saves(client):
     assert client.get("/profile", headers=auth(ALICE)).json() == {
+        "display_name": None,
         "birth_year": None,
         "sex": None,
         "age": None,
     }
-    r = client.put("/profile", json={"birth_year": 1994, "sex": "male"}, headers=auth(ALICE))
-    assert r.json() == {"birth_year": 1994, "sex": "male", "age": TODAY.year - 1994}
+    r = client.put(
+        "/profile",
+        json={"display_name": "  Darren   Y ", "birth_year": 1994, "sex": "male"},
+        headers=auth(ALICE),
+    )
+    assert r.json() == {
+        "display_name": "Darren Y",
+        "birth_year": 1994,
+        "sex": "male",
+        "age": TODAY.year - 1994,
+    }
     r = client.put("/profile", json={"birth_year": 1990, "sex": "female"}, headers=auth(ALICE))
     assert r.json()["sex"] == "female"
     assert client.get("/profile", headers=auth(uuid.uuid4())).json()["birth_year"] is None

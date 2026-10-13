@@ -148,6 +148,7 @@ export interface StravaSyncResult {
 export type Sex = "female" | "male";
 
 export interface Profile {
+  display_name: string | null;
   birth_year: number | null;
   sex: Sex | null;
   age: number | null;
@@ -173,6 +174,7 @@ export interface OverallRank {
   tier: number;
   distance: string;
   age_grade: number;
+  source: "best time" | "prediction";
   next_rank: RankName | null;
   next_rank_age_grade: number | null;
   next_rank_time_s: number | null;
@@ -184,4 +186,18 @@ export interface Comparison {
   rows: ComparisonRow[];
   overall: OverallRank | null;
   sources: { age_grade: string; percentiles: string | null; finishers: number | null };
+}
+
+export interface PersonalBest {
+  name: string;
+  distance_m: number;
+  time_s: number;
+  run_id: string;
+  date: string;
+}
+
+export interface RunnerCard {
+  name: string | null;
+  rank: OverallRank | null;
+  bests: PersonalBest[];
 }

@@ -123,7 +123,9 @@ def main() -> None:
         },
     ).raise_for_status()
     # And a profile, so "How you compare" on Trends has something to show.
-    client.put("/profile", json={"birth_year": 1994, "sex": "male"}).raise_for_status()
+    client.put(
+        "/profile", json={"display_name": "Demo Runner", "birth_year": 1994, "sex": "male"}
+    ).raise_for_status()
     print(f"Demo account ready: {uploaded + 1} runs, a goal and a profile for user {demo_id}.")
 
 

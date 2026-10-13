@@ -24,6 +24,13 @@ This file records why the project is built the way it is: the choices I made, wh
 - Each rank shows the time that reaches the next one (standard ÷ next threshold), which turns a label into a target.
 - The badges are army-style rank insignia struck in each rank's material: Bronze is a private's single chevron, Silver a private first class (chevron and rocker), Gold a corporal (two chevrons), Platinum a sergeant (three), Diamond a first sergeant (three chevrons, two rockers and a diamond), Emerald a sergeant major (three chevrons, three rockers and a star), Pace Setter a lieutenant colonel's oak leaf and Apex a colonel's eagle. The shape changes at every rank, not just the colour, so they're distinct in greyscale and for colour-blind runners, and the rank name is always written next to them.
 
+### The runner card
+- The Runs page opens with a card: your rank badge, your name, average pace, this month's distance and personal bests at 5k, 10k, half and marathon.
+- **Personal bests are only real times.** They're the fastest stretch of that length inside a GPX run, or a whole run of about the right length: up to 5% long, or up to 2% short, because GPS often measures a real 10k race as 9.9-something km. Times are scaled to the exact distance at the run's average pace. Nothing predicted or extrapolated appears.
+- **Your rank** is the best age grade from either a real best time or a prediction at a distance you've run near. The card and the Trends banner use the same rule, so they always agree. Before this, a runner whose only 5k was a treadmill run (not a race, so not a prediction anchor) showed as unranked despite a real 5k time.
+- The demo's best 10k first showed 55:06, a stretch inside a long run, while its 10k race was 43:24: GPS measured that race at 9.99 km, a hair under 10,000 m, so it never counted as a 10k. Allowing 2% short fixed it.
+- Average pace and this month's distance are worked out in the browser from the runs already loaded, so "this month" is your local month.
+
 ### What's deliberately left out
 - **Weight:** no public dataset links bodyweight to race times. A percentile "for your weight" would be invented, so it isn't asked for.
 - **Sex:** the published standards exist only for women and men, so those are the options, and the page says why. Leaving it blank simply skips the comparison.
