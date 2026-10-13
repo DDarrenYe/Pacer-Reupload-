@@ -9,6 +9,7 @@ import type { RankName } from "../ranks";
  *   Gold        Corporal              2 chevrons
  *   Platinum    Sergeant              3 chevrons
  *   Diamond     First Sergeant        3 chevrons, 2 rockers, a diamond
+ *   Emerald     Sergeant Major        3 chevrons, 3 rockers, a star
  *   Pace Setter Lieutenant Colonel    oak leaf
  *   Apex        Colonel               eagle
  * The shape changes at every rank, not just the colour, so they stay distinct in
@@ -26,6 +27,7 @@ const MATERIALS: Record<RankName, Material> = {
   Gold: { light: "#fff3b0", mid: "#e2b22c", dark: "#a2710a", edge: "#6e4c05" },
   Platinum: { light: "#f7fffd", mid: "#b9dcd8", dark: "#6f9e99", edge: "#3f6b67" },
   Diamond: { light: "#f2faff", mid: "#9ccbff", dark: "#3d7fe0", edge: "#1f4f9e" },
+  Emerald: { light: "#d6ffe9", mid: "#2fbf71", dark: "#0b7a43", edge: "#05502b" },
   "Pace Setter": { light: "#ffd9a3", mid: "#f0782a", dark: "#b23a0c", edge: "#7a2306" },
   Apex: { light: "#f0dcff", mid: "#9b5cf0", dark: "#4c1d95", edge: "#2e0f63" },
 };
@@ -111,6 +113,15 @@ function Insignia({
           {/* The first sergeant's diamond, cut like a gem */}
           <path d="M32 26 L38 33 L32 41 L26 33 Z" {...metal} />
           <path d="M26 33 L38 33 M32 26 L30 33 L32 41 M32 26 L34 33" stroke={light} strokeWidth="0.8" fill="none" opacity="0.9" />
+        </>
+      );
+    case "Emerald":
+      return (
+        <>
+          {[1, 8, 15].map((y) => <path key={y} d={chevron(y)} {...metal} />)}
+          {[36, 42, 48].map((y) => <path key={y} d={rocker(y)} {...metal} />)}
+          {/* The sergeant major's star */}
+          <path d="M32 23.5 L33.9 28.2 L38.8 28.5 L35 31.6 L36.2 36.4 L32 33.7 L27.8 36.4 L29 31.6 L25.2 28.5 L30.1 28.2 Z" {...metal} />
         </>
       );
     case "Pace Setter":

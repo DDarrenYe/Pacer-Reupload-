@@ -37,15 +37,16 @@ MIN_AGE, MAX_AGE = 5, 100
 SEXES = ("female", "male")
 # The usual age-grade bands, as used by parkrun and road-race scorers.
 BANDS = [(90, "World class"), (80, "National class"), (70, "Regional class"), (60, "Local class")]
-# Game-style ranks by age grade, lowest first. The bottom three split the bulk of race
-# finishers (median about 48%, 75th percentile about 57%); the top four match the
-# official classes above.
+# Game-style ranks by age grade, lowest first. The bottom four split the bulk of race
+# finishers (median about 48%, 75th percentile about 57%, 90th about 65%); from Diamond
+# up they match the official classes above (local 60, regional 70, national 80, world 90).
 RANKS = [
     ("Bronze", 0.0),
-    ("Silver", 40.0),
-    ("Gold", 50.0),
-    ("Platinum", 60.0),
-    ("Diamond", 70.0),
+    ("Silver", 35.0),
+    ("Gold", 45.0),
+    ("Platinum", 52.0),
+    ("Diamond", 60.0),
+    ("Emerald", 70.0),
     ("Pace Setter", 80.0),
     ("Apex", 90.0),
 ]
@@ -81,7 +82,7 @@ def band_label(grade: float) -> str:
 @dataclass(frozen=True)
 class Rank:
     name: str
-    tier: int  # 1 (Bronze) to 7 (Apex)
+    tier: int  # 1 (Bronze) to 8 (Apex)
     floor: float
     next_name: str | None
     next_floor: float | None

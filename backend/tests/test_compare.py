@@ -231,14 +231,15 @@ def test_build_percentiles_reads_time_formats():
     ("grade", "name", "tier", "next_name"),
     [
         (12.0, "Bronze", 1, "Silver"),
-        (39.9, "Bronze", 1, "Silver"),
-        (40.0, "Silver", 2, "Gold"),
-        (55.0, "Gold", 3, "Platinum"),
-        (60.0, "Platinum", 4, "Diamond"),
-        (79.9, "Diamond", 5, "Pace Setter"),
-        (85.0, "Pace Setter", 6, "Apex"),
-        (90.0, "Apex", 7, None),
-        (104.0, "Apex", 7, None),
+        (34.9, "Bronze", 1, "Silver"),
+        (35.0, "Silver", 2, "Gold"),
+        (48.0, "Gold", 3, "Platinum"),
+        (52.0, "Platinum", 4, "Diamond"),
+        (60.0, "Diamond", 5, "Emerald"),
+        (75.0, "Emerald", 6, "Pace Setter"),
+        (85.0, "Pace Setter", 7, "Apex"),
+        (90.0, "Apex", 8, None),
+        (104.0, "Apex", 8, None),
     ],
 )
 def test_rank_thresholds(grade, name, tier, next_name):
@@ -247,14 +248,14 @@ def test_rank_thresholds(grade, name, tier, next_name):
 
 
 def test_rank_progress():
-    assert cmp.rank_for(55.0).progress(55.0) == 50.0  # halfway through Gold (50-60)
+    assert cmp.rank_for(65.0).progress(65.0) == 50.0  # halfway through Diamond (60-70)
     assert cmp.rank_for(95.0).progress(95.0) is None  # nothing above Apex
 
 
 def test_time_for_next_rank_earns_it(percentiles):
     rows = cmp.compare([race(10, 10, 45)], 32, "male", TODAY)
     ten = rows[1]
-    assert ten.rank.name == "Gold" and ten.rank.next_name == "Platinum"
+    assert ten.rank.name == "Platinum" and ten.rank.next_name == "Diamond"
     assert cmp.age_grade(ten.next_rank_time_s, 10000, 32, "male") == pytest.approx(60.0, abs=0.01)
 
 
@@ -283,9 +284,9 @@ def test_comparison_includes_overall_rank(client, percentiles):
     )
     body = client.get("/comparison", headers=auth(ALICE)).json()
     overall = body["overall"]
-    assert overall["rank"] == "Gold" and overall["tier"] == 3
+    assert overall["rank"] == "Platinum" and overall["tier"] == 4
     best = max((r for r in body["rows"] if not r["extrapolated"]), key=lambda r: r["age_grade"])
     assert overall["distance"] == best["name"] and overall["age_grade"] == best["age_grade"]
-    assert overall["next_rank"] == "Platinum" and 0 < overall["progress_pct"] < 100
+    assert overall["next_rank"] == "Diamond" and 0 < overall["progress_pct"] < 100
     assert overall["next_rank_time_s"] < best["time_s"]
-    assert body["rows"][1]["rank"] == "Gold"
+    assert body["rows"][1]["rank"] == "Platinum"
