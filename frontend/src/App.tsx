@@ -1,5 +1,5 @@
 import { lazy, Suspense, type ReactNode } from "react";
-import { BrowserRouter, Link, NavLink, Route, Routes, useLocation } from "react-router-dom";
+import { BrowserRouter, Link, Navigate, NavLink, Route, Routes } from "react-router-dom";
 
 import { AuthProvider, RequireAuth, signOut, useAuth } from "./auth";
 import ErrorBoundary from "./components/ErrorBoundary";
@@ -13,13 +13,12 @@ const Trends = lazy(() => import("./pages/Trends"));
 const Goals = lazy(() => import("./pages/Goals"));
 const StravaCallback = lazy(() => import("./pages/StravaCallback"));
 const Account = lazy(() => import("./pages/Account"));
-const Feedback = lazy(() => import("./pages/Feedback"));
+const Rank = lazy(() => import("./pages/Rank"));
 
 const loading = <main><p className="muted">Loading…</p></main>;
 
 function Nav() {
   const { session, demo } = useAuth();
-  const location = useLocation();
   if (!session && !demo) return null;
   return (
     <>
@@ -31,8 +30,8 @@ function Nav() {
         <div className="nav-tabs">
           <NavLink to="/" end className="nav-tab">Runs</NavLink>
           <NavLink to="/trends" className="nav-tab">Trends</NavLink>
+          <NavLink to="/rank" className="nav-tab">Rank</NavLink>
           <NavLink to="/goals" className="nav-tab">Goals</NavLink>
-          <NavLink to="/feedback" state={{ from: location.pathname }} className="nav-tab">Feedback</NavLink>
         </div>
         <Link to="/account" className="nav-profile" title={demo ? undefined : session?.user.email}>
           {demo ? "Demo" : "My Profile"}
@@ -70,7 +69,9 @@ export default function App() {
             <Route path="/goals" element={protect(<Goals />)} />
             <Route path="/strava/callback" element={protect(<StravaCallback />)} />
             <Route path="/account" element={protect(<Account />)} />
-            <Route path="/feedback" element={protect(<Feedback />)} />
+            <Route path="/rank" element={protect(<Rank />)} />
+            {/* Old links: feedback now lives at the bottom of My Profile */}
+            <Route path="/feedback" element={<Navigate to="/account#feedback" replace />} />
             <Route path="*" element={<main><p>Page not found. <Link to="/">Go to your runs</Link></p></main>} />
           </Routes>
         </BrowserRouter>

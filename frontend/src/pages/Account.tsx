@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 
 import { api, type Account as AccountInfo } from "../api";
 import { signOut, useAuth } from "../auth";
+import FeedbackCard from "../components/FeedbackCard";
 import ProfileDetailsCard from "../components/ProfileDetailsCard";
 import RankMedal from "../components/RankMedal";
 import StravaCard from "../components/StravaCard";
@@ -47,7 +48,7 @@ export default function Account() {
           {info && ` ${info.run_count} run${info.run_count === 1 ? "" : "s"} saved.`}
         </p>
         {rank && (
-          <Link to="/trends" className="rank-badge" title="See how you compare on Trends">
+          <Link to="/rank" className="rank-badge" title="See your rank and how you compare">
             <RankMedal rank={rank.rank} size={36} />
             <span>
               {rank.label}
@@ -83,6 +84,8 @@ export default function Account() {
           </div>
         </section>
       )}
+
+      <FeedbackCard />
     </main>
   );
 }

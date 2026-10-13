@@ -127,7 +127,7 @@ The projection carries your recent trend forward, but at no more than 1% faster 
 
 ## How you compare
 
-On the Trends page, add your year of birth and sex. For 5k, 10k, 15k, half and marathon, Pacer takes your predicted time and shows:
+On My Profile, add your year of birth and sex. The Rank page then takes your predicted time at 5k, 10k, 15k, half and marathon and shows:
 
 - **Age grade:** the best time expected for your age and sex divided by your time, so 100% is world-record level for your age. It's comparable across ages, sexes and distances. Bands: 90%+ world class, 80%+ national, 70%+ regional, 60%+ local.
 - **Faster than X%:** where that age grade sits among 2023 US marathon finishers of your sex and 5-year age group.

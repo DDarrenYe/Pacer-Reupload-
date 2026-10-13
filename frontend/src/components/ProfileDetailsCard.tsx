@@ -5,7 +5,7 @@ import type { Profile, Sex } from "../types";
 
 const THIS_YEAR = new Date().getFullYear();
 
-/** My Profile: your name (for the runner card), and year of birth and sex (for "How you compare" on Trends). */
+/** My Profile: your name (for the runner card), and year of birth and sex (for "How you compare" on Rank). */
 export default function ProfileDetailsCard({ readOnly = false }: { readOnly?: boolean }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [name, setName] = useState("");
@@ -36,7 +36,7 @@ export default function ProfileDetailsCard({ readOnly = false }: { readOnly?: bo
         sex: sex || null,
       });
       setProfile(saved);
-      setMessage(saved.age !== null && saved.sex ? "Saved. See how you compare on the Trends page." : "Saved.");
+      setMessage(saved.age !== null && saved.sex ? "Saved. See your rank on the Rank page." : "Saved.");
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -51,7 +51,7 @@ export default function ProfileDetailsCard({ readOnly = false }: { readOnly?: bo
       <h2>Your details</h2>
       <p className="muted">
         Your name appears on your runner card. Your year of birth and sex are used only to compare your times with
-        runners like you on the Trends page; leave them blank to skip that.
+        runners like you on the Rank page; leave them blank to skip that.
       </p>
       <form className="stack" onSubmit={save}>
         <label>

@@ -112,7 +112,7 @@ This file records why the project is built the way it is: the choices I made, wh
 - **Why:** You can't ask people to upload GPS traces of where they run without letting them take it all back. The UI asks you to type DELETE first.
 
 ### Feedback, errors and the first-visit experience
-- A feedback table (RLS on) that testers write to from a form. I read it in the Supabase dashboard.
+- A feedback table (RLS on) that testers write to from a form at the bottom of My Profile. I read it in the Supabase dashboard.
 - A catch-all 500 handler logs the full error but tells the browser only "Something went wrong on our side." A React error boundary does the same on the front end, so a crash never shows a blank page.
 - Signed-out visitors land on a welcome page that explains how to export a GPX from Strava or Garmin, instead of a bare login form.
 

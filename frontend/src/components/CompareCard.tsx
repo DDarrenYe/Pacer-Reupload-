@@ -7,7 +7,7 @@ import { DIVISIONS, RANKS, isDivided, rankRange } from "../ranks";
 import type { Comparison, OverallRank } from "../types";
 import RankMedal from "./RankMedal";
 
-/** Trends page: age grade and percentile at 5k to marathon for your age and sex. The
+/** Rank page: age grade and percentile at 5k to marathon for your age and sex. The
  * age and sex themselves are set on My Profile. */
 /** The big rank badge: medal, rank, what it's based on, and the way to the next one. */
 export function RankHeader({ overall }: { overall: OverallRank }) {

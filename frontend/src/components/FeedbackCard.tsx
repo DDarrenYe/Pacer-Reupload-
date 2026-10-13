@@ -1,13 +1,9 @@
 import { useState, type FormEvent } from "react";
-import { useLocation } from "react-router-dom";
 
 import { api } from "../api";
-import { useTitle } from "../useTitle";
 
-export default function Feedback() {
-  useTitle("Feedback");
-  const location = useLocation();
-  const from = (location.state as { from?: string } | null)?.from ?? null;
+/** My Profile: send the developer a note. */
+export default function FeedbackCard() {
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState(false);
@@ -18,7 +14,7 @@ export default function Feedback() {
     setBusy(true);
     setError(null);
     try {
-      await api.sendFeedback(message, from ?? location.pathname);
+      await api.sendFeedback(message, "/account");
       setSent(true);
       setMessage("");
     } catch (err) {
@@ -29,9 +25,9 @@ export default function Feedback() {
   }
 
   return (
-    <main>
-      <h1>Feedback</h1>
-      <form className="card stack" onSubmit={submit}>
+    <section className="card" id="feedback">
+      <form className="stack" onSubmit={submit}>
+        <h2>Feedback</h2>
         <p className="muted">Something wrong, confusing or missing? A number that doesn't match Strava? Tell me here.</p>
         <label>
           Your message
@@ -44,6 +40,6 @@ export default function Feedback() {
           <button type="submit" disabled={busy || !message.trim()}>{busy ? "Sending…" : "Send feedback"}</button>
         </div>
       </form>
-    </main>
+    </section>
   );
 }
