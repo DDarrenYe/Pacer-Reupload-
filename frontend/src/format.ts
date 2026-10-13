@@ -88,3 +88,10 @@ export function describeGap(seconds: number): string {
   if (Math.abs(seconds) < 1) return "spot on";
   return `${formatDuration(Math.abs(seconds))} ${seconds < 0 ? "faster" : "slower"}`;
 }
+
+/** Share of a group you're faster than -> "64%", "under 1%", "over 99%". */
+export function describePercentile(pct: number): string {
+  if (pct < 1) return "under 1%";
+  if (pct > 99) return "over 99%";
+  return `${Math.round(pct)}%`;
+}

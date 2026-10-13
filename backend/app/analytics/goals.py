@@ -193,7 +193,7 @@ def analyse(
     now = predict_at(efforts, distance_m, today)
     if now:
         a.now_s = round(now[0], 1)
-        a.anchor = _label(now[1])
+        a.anchor = effort_label(now[1])
         a.personal_now_s = round(fit.predict(distance_m), 1) if fit else None
         a.weekly = weekly_predictions(efforts, distance_m, today)
         projected, a.projection_note, a.projection_basis = project(a.weekly, a.now_s, days_left / 7)
@@ -299,6 +299,6 @@ def _km_at_pace(run: RunInfo, target_pace: float) -> float:
     return run.distance_m / 1000 if pace <= target_pace + PACE_TOLERANCE_S else 0.0
 
 
-def _label(e: Effort) -> str:
+def effort_label(e: Effort) -> str:
     kind = "race" if e.is_race else "best effort"
     return f"your {round(e.distance_m / 1000, 1):g} km {kind} on {e.day.isoformat()}"

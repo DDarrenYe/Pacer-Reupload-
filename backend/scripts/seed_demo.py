@@ -122,7 +122,9 @@ def main() -> None:
             "race_date": (today + timedelta(weeks=7)).date().isoformat(),
         },
     ).raise_for_status()
-    print(f"Demo account ready: {uploaded + 1} runs and a goal for user {demo_id}.")
+    # And a profile, so "How you compare" on Trends has something to show.
+    client.put("/profile", json={"birth_year": 1994, "sex": "male"}).raise_for_status()
+    print(f"Demo account ready: {uploaded + 1} runs, a goal and a profile for user {demo_id}.")
 
 
 if __name__ == "__main__":

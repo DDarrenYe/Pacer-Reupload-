@@ -6,7 +6,7 @@ from sqlalchemy import delete, func, select
 
 from app.auth import CurrentUserId, WritableUserId, is_demo_user
 from app.db import DbSession
-from app.models import Feedback, Goal, Run, StravaConnection
+from app.models import Feedback, Goal, Profile, Run, StravaConnection
 from app.storage import StorageDep, StorageError
 from app.strava import OptionalStravaDep, deauthorize_quietly
 from app.supabase_admin import AdminDep, AdminError
@@ -30,8 +30,8 @@ def delete_account(
     admin: AdminDep,
     strava: OptionalStravaDep,
 ) -> Response:
-    """Delete everything: runs (with splits and best efforts), files, goals, feedback,
-    the Strava connection (revoked on Strava's side too) and the login."""
+    """Delete everything: runs (with splits and best efforts), files, goals, profile,
+    feedback, the Strava connection (revoked on Strava's side too) and the login."""
     conn = db.scalar(select(StravaConnection).where(StravaConnection.user_id == user_id))
     if conn is not None:
         if strava is not None:
@@ -48,6 +48,7 @@ def delete_account(
         db.delete(run)
     db.execute(delete(Feedback).where(Feedback.user_id == user_id))
     db.execute(delete(Goal).where(Goal.user_id == user_id))
+    db.execute(delete(Profile).where(Profile.user_id == user_id))
     db.commit()
     try:
         admin.delete_user(user_id)

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 
 import { api } from "../api";
 import { BarChart, LineChart } from "../components/charts";
+import CompareCard from "../components/CompareCard";
 import { describeExponent, formatDuration, formatShortDate } from "../format";
 import type { Evaluation, LoadDay, RunnerPredictions, Week } from "../types";
 import { useSlowNotice } from "../useSlowNotice";
@@ -112,6 +113,8 @@ export default function Trends() {
           </p>
         )}
       </section>
+
+      <CompareCard />
 
       <section className="card">
         <h2>Weekly trends</h2>

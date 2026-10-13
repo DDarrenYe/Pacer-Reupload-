@@ -142,3 +142,29 @@ export interface StravaSyncResult {
   skipped: number;
   more: boolean;
 }
+
+export type Sex = "female" | "male";
+
+export interface Profile {
+  birth_year: number | null;
+  sex: Sex | null;
+  age: number | null;
+}
+
+export interface ComparisonRow {
+  name: string;
+  distance_m: number;
+  time_s: number | null;
+  anchor: string | null;
+  extrapolated: boolean;
+  age_grade: number | null;
+  band: string | null;
+  faster_than_pct: number | null;
+  group: string | null;
+}
+
+export interface Comparison {
+  profile: Profile;
+  rows: ComparisonRow[];
+  sources: { age_grade: string; percentiles: string | null; finishers: number | null };
+}

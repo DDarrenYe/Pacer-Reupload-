@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.config import get_settings
-from app.routes import account, demo, goals, load, predictions, runs, strava, uploads
+from app.routes import account, demo, goals, load, predictions, profile, runs, strava, uploads
 from app.storage import StorageError
 
 logger = logging.getLogger(__name__)
@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 app = FastAPI(
     title="Pacer API",
     description="Upload GPX or CSV runs and get splits, fatigue trends and race predictions.",
-    version="0.8.0",
+    version="0.9.0",
 )
 
 app.add_middleware(
@@ -31,6 +31,7 @@ app.include_router(account.router)
 app.include_router(demo.router)
 app.include_router(goals.router)
 app.include_router(strava.router)
+app.include_router(profile.router)
 
 
 @app.exception_handler(StorageError)

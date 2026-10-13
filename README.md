@@ -1,6 +1,6 @@
 # Pacer
 
-Pacer is a running analytics app. Connect Strava or upload a GPX file and see your km splits, how much you fade, your best efforts, weekly trends and predicted race times. Set a race goal (say, a sub-2:10 half in November) and Pacer shows where your trend puts you on race day and what to work on.
+Pacer is a running analytics app. Connect Strava or upload a GPX file and see your km splits, how much you fade, your best efforts, weekly trends and predicted race times. Set a race goal (say, a sub-2:10 half in November) and Pacer shows where your trend puts you on race day and what to work on. Add your age and sex to see how you compare with other runners at 5k to marathon.
 
 - **Try it:** https://training-analytics-tool.vercel.app (click **Try the demo** to look around with sample runs, no sign-up needed)
 - **API docs:** https://run-analytics-api.onrender.com/docs. It runs on Render's free tier, so the first request after a quiet spell can take up to a minute.
@@ -35,6 +35,8 @@ Python, FastAPI, SQLAlchemy, Alembic, pandas, NumPy, statsmodels, gpxpy · Postg
 | POST | `/strava/sync` | ✔ | Import new runs from Strava (up to 30 at a time) |
 | DELETE | `/strava` | ✔ | Disconnect Strava and delete every run imported from it |
 | GET / POST | `/strava/webhook` | – | Strava's webhook: verification, and access revoked on Strava's side |
+| GET / PUT | `/profile` | ✔ | Your year of birth and sex (optional, used only for comparisons) |
+| GET | `/comparison` | ✔ | Predicted 5k–marathon times with age grade and percentile for your age and sex |
 | GET / POST | `/goals` | ✔ | Your race goals, each with predicted time now, projected race-day time and suggestions / add a goal |
 | PUT / DELETE | `/goals/{id}` | ✔ | Change or delete a goal |
 | GET | `/account` / DELETE `/account` | ✔ | Your run count / delete your account and everything in it |
@@ -121,6 +123,19 @@ Add a race on the **Goals** tab: pick a distance (5k, 10k, half, marathon or any
 - **What to do:** suggestions for weekly distance, long run, goal-pace practice, training load and taper. Each one quotes the number behind it, e.g. "you've averaged 18 km a week; build towards 30 km".
 
 The projection carries your recent trend forward, but at no more than 1% faster or 0.5% slower a week. With under 4 weeks of data, it assumes your current fitness holds and says so, rather than guessing a trend. After race day, a run of about that distance within a day of the date is taken as your result. The thresholds are in [docs/MODEL.md](docs/MODEL.md#goals) and the reasoning is in [docs/DECISIONS.md](docs/DECISIONS.md#after-launch-race-goals).
+
+## How you compare
+
+On the Trends page, add your year of birth and sex. For 5k, 10k, 15k, half and marathon, Pacer takes your predicted time and shows:
+
+- **Age grade:** the best time expected for your age and sex divided by your time, so 100% is world-record level for your age. It's comparable across ages, sexes and distances. Bands: 90%+ world class, 80%+ national, 70%+ regional, 60%+ local.
+- **Faster than X%:** where that age grade sits among 2023 US marathon finishers of your sex and 5-year age group.
+
+Weight isn't asked for: no public dataset links bodyweight to race times, so any "percentile for your weight" would be invented. The standards only exist for women and men. See [DECISIONS](docs/DECISIONS.md#after-launch-how-you-compare) for why percentiles for shorter races are a rough guide.
+
+**Data and credits**
+- Age grading: 2025 road age standards by Alan Jones and Tom Bernhard, approved by USATF Masters Long Distance Running, public domain (CC0): [AlanLyttonJones/Age-Grade-Tables](https://github.com/AlanLyttonJones/Age-Grade-Tables). `scripts/build_age_standards.py` turns the spreadsheets into `app/data/age_standards_2025.json`.
+- Percentiles: [2023 Marathon Results](https://www.kaggle.com/datasets/runningwithrock/2023-marathon-results) by Running with Rock, CC BY 4.0. Download `Results.csv` and run `python scripts/build_percentiles.py path/to/Results.csv`. It writes only aggregated percentiles (`app/data/finisher_percentiles.json`), never names or individual results. Until that file exists, the page shows age grades only.
 
 ## Supported files
 

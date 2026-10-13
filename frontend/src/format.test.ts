@@ -4,6 +4,7 @@ import {
   describeCountdown,
   describeDrift,
   describeGap,
+  describePercentile,
   describeExponent,
   formatDistance,
   formatDuration,
@@ -90,4 +91,12 @@ describe("describeGap", () => {
     expect(describeGap(179)).toBe("2:59 slower");
   });
   it("calls a tiny gap spot on", () => expect(describeGap(0.4)).toBe("spot on"));
+});
+
+describe("describePercentile", () => {
+  it("rounds", () => expect(describePercentile(63.6)).toBe("64%"));
+  it("caps the ends", () => {
+    expect(describePercentile(0.4)).toBe("under 1%");
+    expect(describePercentile(100)).toBe("over 99%");
+  });
 });

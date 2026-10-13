@@ -1,12 +1,15 @@
 import { demoToken, saveDemo } from "./demo";
 import { supabase } from "./supabase";
 import type {
+  Comparison,
   Evaluation,
   Goal,
   LoadDay,
   Run,
   RunDetail,
+  Profile,
   RunnerPredictions,
+  Sex,
   StravaStatus,
   StravaSyncResult,
   Surface,
@@ -92,6 +95,14 @@ export const api = {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ message, page }),
     }),
+  profile: () => request<Profile>("/profile"),
+  saveProfile: (input: { birth_year: number | null; sex: Sex | null }) =>
+    request<Profile>("/profile", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    }),
+  comparison: () => request<Comparison>("/comparison"),
   stravaStatus: () => request<StravaStatus>("/strava"),
   stravaConnect: (code: string, scope: string) =>
     request<{ connected: boolean; athlete_name: string | null }>("/strava/connect", {

@@ -120,7 +120,7 @@ a { color: var(--accent); }
   padding: 16px;
   min-width: 0;
 }
-.stack { display: grid; gap: 12px; }
+.stack { display: grid; gap: 12px; grid-template-columns: minmax(0, 1fr); }
 .row { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
 
 label { display: grid; gap: 4px; font-size: 0.9rem; color: var(--text-secondary); }
@@ -263,3 +263,6 @@ textarea {
 /* Strava's brand guidelines: an orange "Connect with Strava" button and "View on Strava" links. */
 button.strava-button { background: var(--strava); color: #fff; font-size: 1.2rem; font-weight: 700; }
 a.strava-link { color: var(--strava-text); font-weight: 700; }
+/* Source notes can contain long URLs; let them wrap rather than widen the page. */
+.facts { overflow-wrap: break-word; }
+.page-header h2 { margin: 0; }

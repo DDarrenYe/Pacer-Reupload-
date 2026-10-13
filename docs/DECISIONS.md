@@ -4,6 +4,26 @@ This file records why the project is built the way it is: the choices I made, wh
 
 ---
 
+## After launch: how you compare
+
+### Age grade first, because it's fair and well sourced
+- **Decision:** for each distance, show your predicted time's **age grade**: the age standard for your age and sex divided by your time.
+- **Why:** the 2025 road standards (Alan Jones and Tom Bernhard, approved by USATF Masters Long Distance Running) are public domain and cover every single year of age from 5 to 100 at exactly the distances wanted, including 15k. They're what parkrun and road-race scorers use, so the numbers mean something to runners.
+
+### Percentiles from real finishers, bridged by age grade
+- The only large, open dataset with age and sex I could find is the 2023 US marathon results (about 429,000 finishers, CC BY 4.0). There's no open equivalent for 5k, 10k, 15k or half.
+- So each finisher's marathon time is turned into an age grade, and the 1st–99th percentiles are stored per sex and 5-year band. Your time at any distance becomes an age grade and is ranked against that. Age grading is designed to put distances on one scale, which makes this the most honest bridge available.
+- **Known bias, stated on the page:** people who finish marathons are fitter than runners in general, and shorter races draw more casual runners. So "faster than X%" is against a strong field, and the 5k–half percentiles are a rough guide.
+- Bands with fewer than 500 finishers are merged with a neighbour, so a handful of 80-year-olds can't produce a wild percentile.
+- Only aggregates are committed: no names, no individual results.
+
+### What's deliberately left out
+- **Weight:** no public dataset links bodyweight to race times. A percentile "for your weight" would be invented, so it isn't asked for.
+- **Sex:** the published standards exist only for women and men, so those are the options, and the page says why. Leaving it blank simply skips the comparison.
+- **Age is stored as year of birth,** so it stays right without editing.
+
+---
+
 ## After launch: Strava import
 
 ### Connect, not sign in
