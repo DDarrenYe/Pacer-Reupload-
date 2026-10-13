@@ -149,7 +149,7 @@ export default function CompareCard() {
               <thead>
                 <tr>
                   <th>Distance</th>
-                  <th className="num">Predicted</th>
+                  <th className="num">Time</th>
                   <th className="num">Age grade</th>
                   <th>Rank</th>
                   <th>Faster than</th>
