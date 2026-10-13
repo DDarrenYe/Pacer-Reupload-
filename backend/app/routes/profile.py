@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field, field_validator
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.analytics.compare import compare, percentile_table
+from app.analytics.compare import best_row, compare, percentile_table
 from app.analytics.data import load_efforts
 from app.auth import CurrentUserId, WritableUserId
 from app.db import DbSession
@@ -66,10 +66,24 @@ def comparison(user_id: CurrentUserId, db: DbSession) -> dict:
         "finishers": table["finishers"] if table else None,
     }
     if profile.age is None or profile.sex is None:
-        return {"profile": profile, "rows": [], "sources": sources}
+        return {"profile": profile, "rows": [], "overall": None, "sources": sources}
     rows = compare(load_efforts(db, user_id), profile.age, profile.sex, date.today())
+    best = best_row(rows)
+    overall = None
+    if best is not None:
+        overall = {
+            "rank": best.rank.name,
+            "tier": best.rank.tier,
+            "distance": best.name,
+            "age_grade": best.age_grade,
+            "next_rank": best.rank.next_name,
+            "next_rank_age_grade": best.rank.next_floor,
+            "next_rank_time_s": best.next_rank_time_s,
+            "progress_pct": best.rank.progress(best.age_grade),
+        }
     return {
         "profile": profile,
+        "overall": overall,
         "rows": [
             {
                 "name": r.name,
@@ -81,6 +95,9 @@ def comparison(user_id: CurrentUserId, db: DbSession) -> dict:
                 "band": r.band,
                 "faster_than_pct": r.percentile.faster_than_pct if r.percentile else None,
                 "group": r.percentile.group if r.percentile else None,
+                "rank": r.rank.name if r.rank else None,
+                "next_rank": r.rank.next_name if r.rank else None,
+                "next_rank_time_s": r.next_rank_time_s,
             }
             for r in rows
         ],

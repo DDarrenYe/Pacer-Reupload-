@@ -281,3 +281,15 @@ button.disclosure {
   text-align: left;
 }
 button.disclosure:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+.rank-header { display: flex; gap: 16px; align-items: center; padding: 12px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--page); }
+.rank-header svg { flex-shrink: 0; }
+.rank-body { display: grid; gap: 4px; min-width: 0; flex: 1; }
+.rank-body p { margin: 0; }
+.rank-name { font-size: 1.6rem; font-weight: 800; letter-spacing: -0.01em; }
+.rank-progress { height: 8px; border-radius: 999px; background: var(--border); overflow: hidden; }
+.rank-progress > div { height: 100%; background: var(--accent); border-radius: 999px; }
+.rank-cell { display: inline-flex; align-items: center; gap: 6px; }
+.rank-list { list-style: none; padding: 0; margin: 8px 0 0; display: grid; gap: 8px; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); }
+.rank-list li { display: flex; align-items: center; gap: 10px; }
+.rank-badge { display: inline-flex; align-items: center; gap: 8px; text-decoration: none; color: var(--text-primary); font-weight: 700; }
+.rank-list-text { display: grid; }

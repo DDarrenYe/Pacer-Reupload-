@@ -3,10 +3,73 @@ import { Link } from "react-router-dom";
 
 import { api } from "../api";
 import { describePercentile, formatDuration } from "../format";
-import type { Comparison } from "../types";
+import { RANKS, rankRange } from "../ranks";
+import type { Comparison, OverallRank } from "../types";
+import RankMedal from "./RankMedal";
 
 /** Trends page: age grade and percentile at 5k to marathon for your age and sex. The
  * age and sex themselves are set on My Profile. */
+/** The big rank badge: medal, rank, what it's based on, and the way to the next one. */
+export function RankHeader({ overall }: { overall: OverallRank }) {
+  return (
+    <div className="rank-header">
+      <RankMedal rank={overall.rank} size={72} />
+      <div className="rank-body">
+        <div className="rank-name">{overall.rank}</div>
+        <p className="muted">
+          Your best: {overall.distance} at {overall.age_grade.toFixed(1)}% age grade
+        </p>
+        {overall.next_rank && overall.progress_pct !== null && overall.next_rank_age_grade !== null ? (
+          <>
+            <div
+              className="rank-progress"
+              role="progressbar"
+              aria-label={`Progress to ${overall.next_rank}`}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={Math.round(overall.progress_pct)}
+            >
+              <div style={{ width: `${Math.min(100, Math.max(2, overall.progress_pct))}%` }} />
+            </div>
+            <p className="small">
+              {(overall.next_rank_age_grade - overall.age_grade).toFixed(1)} points to <strong>{overall.next_rank}</strong>
+              {overall.next_rank_time_s !== null && (
+                <>: run a {overall.distance} in {formatDuration(overall.next_rank_time_s)} to get there.</>
+              )}
+            </p>
+          </>
+        ) : (
+          <p className="small">The top rank. World-class for your age.</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function AllRanks() {
+  const [open, setOpen] = useState(false);
+  return (
+    <div>
+      <button className="link" aria-expanded={open} aria-controls="all-ranks" onClick={() => setOpen(!open)}>
+        {open ? "Hide ranks ▴" : "See all ranks ▾"}
+      </button>
+      {open && (
+        <ol id="all-ranks" className="rank-list">
+          {RANKS.map((r) => (
+            <li key={r}>
+              <RankMedal rank={r} size={40} />
+              <span className="rank-list-text">
+                <strong>{r}</strong>
+                <span className="muted small">{rankRange(r)} age grade</span>
+              </span>
+            </li>
+          ))}
+        </ol>
+      )}
+    </div>
+  );
+}
+
 export default function CompareCard() {
   const [data, setData] = useState<Comparison | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -16,7 +79,7 @@ export default function CompareCard() {
   }, []);
 
   if (!data) return error ? <section className="card"><p className="error">{error}</p></section> : null;
-  const { profile, rows, sources } = data;
+  const { profile, rows, overall, sources } = data;
   const complete = profile.age !== null && profile.sex !== null;
   const who = profile.sex === "female" ? "women" : "men";
   const anchors = [...new Set(rows.map((r) => r.anchor).filter(Boolean))];
@@ -37,6 +100,7 @@ export default function CompareCard() {
         <p className="muted">Upload a race or a hard GPX run and your comparison appears here.</p>
       ) : (
         <>
+          {overall && <RankHeader overall={overall} />}
           <p className="muted">
             Based on your predicted times, for {who} aged {profile.age}
             {anchors.length > 0 && <>, starting from {anchors.join("; ")}</>}.
@@ -48,6 +112,7 @@ export default function CompareCard() {
                   <th>Distance</th>
                   <th className="num">Predicted</th>
                   <th className="num">Age grade</th>
+                  <th>Rank</th>
                   <th>Faster than</th>
                 </tr>
               </thead>
@@ -61,7 +126,16 @@ export default function CompareCard() {
                     <td className="num">{r.time_s === null ? "–" : formatDuration(r.time_s)}</td>
                     <td className="num">
                       {r.age_grade === null ? "–" : `${r.age_grade.toFixed(1)}%`}
-                      {r.band && <div className="tile-note">{r.band}</div>}
+                    </td>
+                    <td>
+                      {r.rank ? (
+                        <span className="rank-cell">
+                          <RankMedal rank={r.rank} size={22} />
+                          {r.rank}
+                        </span>
+                      ) : (
+                        <span className="muted">–</span>
+                      )}
                     </td>
                     <td>
                       {r.faster_than_pct === null ? (
@@ -78,7 +152,12 @@ export default function CompareCard() {
               </tbody>
             </table>
           </div>
+          <AllRanks />
           <ul className="facts small">
+            <li>
+              <strong>Ranks</strong> come from age grade, so they're fair across ages, sexes and distances. Your rank
+              is your best age grade at a distance you've actually run near (long predictions don't count).
+            </li>
             <li>
               <strong>Age grade</strong> compares your time with the best expected for your age and sex (100% is
               world-record level), so it's fair across ages and distances. Standards: {sources.age_grade}.

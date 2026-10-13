@@ -1,3 +1,5 @@
+import type { RankName } from "./ranks";
+
 // Mirrors backend/app/schemas/run.py.
 
 export type Surface = "road" | "track" | "treadmill";
@@ -161,10 +163,25 @@ export interface ComparisonRow {
   band: string | null;
   faster_than_pct: number | null;
   group: string | null;
+  rank: RankName | null;
+  next_rank: RankName | null;
+  next_rank_time_s: number | null;
+}
+
+export interface OverallRank {
+  rank: RankName;
+  tier: number;
+  distance: string;
+  age_grade: number;
+  next_rank: RankName | null;
+  next_rank_age_grade: number | null;
+  next_rank_time_s: number | null;
+  progress_pct: number | null;
 }
 
 export interface Comparison {
   profile: Profile;
   rows: ComparisonRow[];
+  overall: OverallRank | null;
   sources: { age_grade: string; percentiles: string | null; finishers: number | null };
 }

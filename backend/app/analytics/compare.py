@@ -37,6 +37,18 @@ MIN_AGE, MAX_AGE = 5, 100
 SEXES = ("female", "male")
 # The usual age-grade bands, as used by parkrun and road-race scorers.
 BANDS = [(90, "World class"), (80, "National class"), (70, "Regional class"), (60, "Local class")]
+# Game-style ranks by age grade, lowest first. The bottom three split the bulk of race
+# finishers (median about 48%, 75th percentile about 57%); the top four match the
+# official classes above.
+RANKS = [
+    ("Bronze", 0.0),
+    ("Silver", 40.0),
+    ("Gold", 50.0),
+    ("Platinum", 60.0),
+    ("Diamond", 70.0),
+    ("Pace Setter", 80.0),
+    ("Apex", 90.0),
+]
 
 
 @cache
@@ -64,6 +76,33 @@ def age_grade(time_s: float, distance_m: float, age: int, sex: str) -> float:
 
 def band_label(grade: float) -> str:
     return next((label for floor, label in BANDS if grade >= floor), "Recreational")
+
+
+@dataclass(frozen=True)
+class Rank:
+    name: str
+    tier: int  # 1 (Bronze) to 7 (Apex)
+    floor: float
+    next_name: str | None
+    next_floor: float | None
+
+    def progress(self, grade: float) -> float | None:
+        """How far through this rank you are, 0-100, or None at the top."""
+        if self.next_floor is None:
+            return None
+        return round(100 * (grade - self.floor) / (self.next_floor - self.floor), 1)
+
+
+def rank_for(grade: float) -> Rank:
+    tier = max(i for i, (_, floor) in enumerate(RANKS) if grade >= floor)
+    name, floor = RANKS[tier]
+    following = RANKS[tier + 1] if tier + 1 < len(RANKS) else (None, None)
+    return Rank(name, tier + 1, floor, following[0], following[1])
+
+
+def time_for_grade(grade: float, distance_m: float, age: int, sex: str) -> float:
+    """The time at this distance that earns this age grade."""
+    return standard_s(distance_m, age, sex) / (grade / 100)
 
 
 @dataclass(frozen=True)
@@ -110,6 +149,9 @@ class ComparisonRow:
     age_grade: float | None
     band: str | None
     percentile: Percentile | None
+    rank: Rank | None = None
+    # The time at this distance that reaches the next rank.
+    next_rank_time_s: float | None = None
 
 
 def compare(efforts: list[Effort], age: int, sex: str, today: date) -> list[ComparisonRow]:
@@ -124,6 +166,7 @@ def compare(efforts: list[Effort], age: int, sex: str, today: date) -> list[Comp
             continue
         time_s, anchor = predicted
         grade = round(age_grade(time_s, distance, age, sex), 1)
+        rank = rank_for(grade)
         rows.append(
             ComparisonRow(
                 name=name,
@@ -134,6 +177,18 @@ def compare(efforts: list[Effort], age: int, sex: str, today: date) -> list[Comp
                 age_grade=grade,
                 band=band_label(grade),
                 percentile=percentile(grade, age, sex),
+                rank=rank,
+                next_rank_time_s=round(time_for_grade(rank.next_floor, distance, age, sex), 1)
+                if rank.next_floor
+                else None,
             )
         )
     return rows
+
+
+def best_row(rows: list[ComparisonRow]) -> ComparisonRow | None:
+    """The row your rank comes from: your best age grade, ignoring extrapolated
+    distances unless there's nothing else (a marathon guessed from a 5k isn't earned)."""
+    graded = [r for r in rows if r.age_grade is not None]
+    solid = [r for r in graded if not r.extrapolated] or graded
+    return max(solid, key=lambda r: r.age_grade, default=None)

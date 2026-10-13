@@ -17,6 +17,13 @@ This file records why the project is built the way it is: the choices I made, wh
 - Bands with fewer than 500 finishers are merged with a neighbour, so a handful of 80-year-olds can't produce a wild percentile.
 - Only aggregates are committed: no names, no individual results.
 
+### Ranks: a game layer on an honest number
+- Seven ranks (Bronze, Silver, Gold, Platinum, Diamond, Pace Setter, Apex) come from **age grade**, not raw time, so a 60-year-old and a 25-year-old earn the same rank for an equally good run, at any distance.
+- **Thresholds:** the bottom three split the bulk of real finishers (in the 2023 data the median age grade is about 48% and the 75th percentile about 57%), so Silver is "typical" and Gold is "better than most". The top four line up with the official classes (local 60%, regional 70%, national 80%, world 90%), so a Diamond means what an age-grading expert would expect.
+- **Your rank** is your best age grade at a distance you've run near. A marathon predicted from a 5k is extrapolated and doesn't count, unless it's all there is.
+- Each rank shows the time that reaches the next one (standard ÷ next threshold), which turns a label into a target.
+- The medals differ in **shape and emblem**, not just colour (chevrons, a star, a gem, a winged bolt, a crown), so they're distinct in greyscale and for colour-blind runners, and the rank name is always written next to them.
+
 ### What's deliberately left out
 - **Weight:** no public dataset links bodyweight to race times. A percentile "for your weight" would be invented, so it isn't asked for.
 - **Sex:** the published standards exist only for women and men, so those are the options, and the page says why. Leaving it blank simply skips the comparison.

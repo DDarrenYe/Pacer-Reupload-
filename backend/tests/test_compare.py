@@ -222,3 +222,70 @@ def test_build_percentiles_reads_time_formats():
     assert bp.to_seconds("") is None and bp.to_seconds("dnf") is None
     assert bp.to_sex("Female") == "female" and bp.to_sex("M") == "male" and bp.to_sex("X") is None
     assert bp.band_of(17) == 0 and bp.band_of(33) == 30 and bp.band_of(91) == 80
+
+
+# Ranks
+
+
+@pytest.mark.parametrize(
+    ("grade", "name", "tier", "next_name"),
+    [
+        (12.0, "Bronze", 1, "Silver"),
+        (39.9, "Bronze", 1, "Silver"),
+        (40.0, "Silver", 2, "Gold"),
+        (55.0, "Gold", 3, "Platinum"),
+        (60.0, "Platinum", 4, "Diamond"),
+        (79.9, "Diamond", 5, "Pace Setter"),
+        (85.0, "Pace Setter", 6, "Apex"),
+        (90.0, "Apex", 7, None),
+        (104.0, "Apex", 7, None),
+    ],
+)
+def test_rank_thresholds(grade, name, tier, next_name):
+    rank = cmp.rank_for(grade)
+    assert (rank.name, rank.tier, rank.next_name) == (name, tier, next_name)
+
+
+def test_rank_progress():
+    assert cmp.rank_for(55.0).progress(55.0) == 50.0  # halfway through Gold (50-60)
+    assert cmp.rank_for(95.0).progress(95.0) is None  # nothing above Apex
+
+
+def test_time_for_next_rank_earns_it(percentiles):
+    rows = cmp.compare([race(10, 10, 45)], 32, "male", TODAY)
+    ten = rows[1]
+    assert ten.rank.name == "Gold" and ten.rank.next_name == "Platinum"
+    assert cmp.age_grade(ten.next_rank_time_s, 10000, 32, "male") == pytest.approx(60.0, abs=0.01)
+
+
+def test_best_row_ignores_extrapolated_distances():
+    row = lambda name, grade, extrapolated: cmp.ComparisonRow(  # noqa: E731
+        name, 0, 1, None, extrapolated, grade, None, None, cmp.rank_for(grade)
+    )
+    rows = [row("5k", 55, False), row("Marathon", 70, True)]
+    assert cmp.best_row(rows).name == "5k"
+    assert cmp.best_row([row("Marathon", 70, True)]).name == "Marathon"
+    assert cmp.best_row([]) is None
+
+
+def test_comparison_includes_overall_rank(client, percentiles):
+    client.put("/profile", json={"birth_year": TODAY.year - 32, "sex": "male"}, headers=auth(ALICE))
+    assert client.get("/comparison", headers=auth(ALICE)).json()["overall"] is None  # no runs yet
+    client.post(
+        "/runs/manual",
+        json={
+            "distance_km": 10,
+            "duration_s": 2700,
+            "is_race": True,
+            "started_at": (TODAY - timedelta(days=5)).isoformat() + "T07:00:00Z",
+        },
+        headers=auth(ALICE),
+    )
+    body = client.get("/comparison", headers=auth(ALICE)).json()
+    overall = body["overall"]
+    assert overall["rank"] == "Gold" and overall["tier"] == 3
+    best = max((r for r in body["rows"] if not r["extrapolated"]), key=lambda r: r["age_grade"])
+    assert overall["distance"] == best["name"] and overall["age_grade"] == best["age_grade"]
+    assert overall["next_rank"] == "Platinum" and 0 < overall["progress_pct"] < 100
+    assert overall["next_rank_time_s"] < best["time_s"]
+    assert body["rows"][1]["rank"] == "Gold"

@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 import { api, type Account as AccountInfo } from "../api";
 import { signOut, useAuth } from "../auth";
 import ProfileDetailsCard from "../components/ProfileDetailsCard";
+import RankMedal from "../components/RankMedal";
 import StravaCard from "../components/StravaCard";
+import type { OverallRank } from "../types";
 import { useTitle } from "../useTitle";
 
 export default function Account() {
@@ -12,12 +14,15 @@ export default function Account() {
   const { session, demo } = useAuth();
   const navigate = useNavigate();
   const [info, setInfo] = useState<AccountInfo | null>(null);
+  const [rank, setRank] = useState<OverallRank | null>(null);
   const [confirmText, setConfirmText] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     api.account().then(setInfo, (e: Error) => setError(e.message));
+    // The rank is a nice extra: if it can't load, the page simply doesn't show it.
+    api.comparison().then((c) => setRank(c.overall), () => setRank(null));
   }, []);
 
   async function remove() {
@@ -41,6 +46,15 @@ export default function Account() {
           {demo ? "You're browsing the demo account." : <>Signed in as <strong>{session?.user.email}</strong>.</>}
           {info && ` ${info.run_count} run${info.run_count === 1 ? "" : "s"} saved.`}
         </p>
+        {rank && (
+          <Link to="/trends" className="rank-badge" title="See how you compare on Trends">
+            <RankMedal rank={rank.rank} size={36} />
+            <span>
+              {rank.rank} rank
+              <span className="muted small"> · {rank.age_grade.toFixed(1)}% age grade</span>
+            </span>
+          </Link>
+        )}
         <button className="secondary" onClick={() => signOut().then(() => navigate("/welcome"))}>
           {demo ? "Leave the demo" : "Sign out"}
         </button>
