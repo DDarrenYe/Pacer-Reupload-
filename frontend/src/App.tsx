@@ -34,7 +34,9 @@ function Nav() {
           <NavLink to="/goals" className="nav-tab">Goals</NavLink>
           <NavLink to="/feedback" state={{ from: location.pathname }} className="nav-tab">Feedback</NavLink>
         </div>
-        <Link to="/account" className="nav-email">{demo ? "Demo" : session?.user.email}</Link>
+        <Link to="/account" className="nav-profile" title={demo ? undefined : session?.user.email}>
+          {demo ? "Demo" : "My Profile"}
+        </Link>
         <button className="link" onClick={() => signOut()}>{demo ? "Leave demo" : "Sign out"}</button>
       </nav>
       {demo && (

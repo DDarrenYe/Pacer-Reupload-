@@ -44,7 +44,7 @@ export default function StravaCallback() {
       {error ? (
         <>
           <p className="error" role="alert">{error}</p>
-          <p><Link to="/account">Back to your account</Link></p>
+          <p><Link to="/account">Back to My Profile</Link></p>
         </>
       ) : (
         <p className="muted" role="status">{step}</p>

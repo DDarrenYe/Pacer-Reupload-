@@ -11,9 +11,13 @@ import type { Run, StravaStatus } from "../types";
 import { useSlowNotice } from "../useSlowNotice";
 import { useTitle } from "../useTitle";
 
+// The list starts with the most recent runs; the rest are one click away.
+const RECENT = 10;
+
 export default function Runs() {
   const [runs, setRuns] = useState<Run[] | null>(null);
   const [mode, setMode] = useState<"file" | "manual">("file");
+  const [showAll, setShowAll] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const { demo } = useAuth();
@@ -88,7 +92,7 @@ export default function Runs() {
         {stravaSync.message && <p className="info" role="status">{stravaSync.message}</p>}
         {runs && runs.length > 0 && (
           <div className="table-scroll">
-            <table>
+            <table id="runs-table">
               <thead>
                 <tr>
                   <th>Date</th>
@@ -100,7 +104,7 @@ export default function Runs() {
                 </tr>
               </thead>
               <tbody>
-                {runs.map((r) => (
+                {(showAll ? runs : runs.slice(0, RECENT)).map((r) => (
                   <tr key={r.id}>
                     <td>{formatDate(r.started_at)}</td>
                     <td>
@@ -117,6 +121,21 @@ export default function Runs() {
                 ))}
               </tbody>
             </table>
+          </div>
+        )}
+        {runs && runs.length > RECENT && (
+          <div className="list-toggle">
+            <span className="muted">
+              Showing {showAll ? runs.length : RECENT} of {runs.length}
+            </span>
+            <button
+              className="link"
+              aria-expanded={showAll}
+              aria-controls="runs-table"
+              onClick={() => setShowAll((v) => !v)}
+            >
+              {showAll ? `Show only the ${RECENT} most recent ▴` : `Show all ${runs.length} runs ▾`}
+            </button>
           </div>
         )}
         {!demo && (strava?.connected || (runs && runs.length > 0)) && (

@@ -7,7 +7,7 @@ import StravaCard from "../components/StravaCard";
 import { useTitle } from "../useTitle";
 
 export default function Account() {
-  useTitle("Account");
+  useTitle("My Profile");
   const { session, demo } = useAuth();
   const navigate = useNavigate();
   const [info, setInfo] = useState<AccountInfo | null>(null);
@@ -34,7 +34,7 @@ export default function Account() {
 
   return (
     <main>
-      <h1>Account</h1>
+      <h1>My Profile</h1>
       <section className="card stack">
         <p>
           {demo ? "You're browsing the demo account." : <>Signed in as <strong>{session?.user.email}</strong>.</>}
