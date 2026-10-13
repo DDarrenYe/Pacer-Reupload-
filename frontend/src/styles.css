@@ -266,3 +266,18 @@ a.strava-link { color: var(--strava-text); font-weight: 700; }
 /* Source notes can contain long URLs; let them wrap rather than widen the page. */
 .facts { overflow-wrap: break-word; }
 .page-header h2 { margin: 0; }
+/* A full-width header button that opens and closes a section. */
+button.disclosure {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  background: none;
+  color: var(--text-primary);
+  border: none;
+  padding: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  text-align: left;
+}
+button.disclosure:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }

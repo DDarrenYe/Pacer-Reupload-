@@ -1,51 +1,23 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 
 import { api } from "../api";
-import { useAuth } from "../auth";
 import { describePercentile, formatDuration } from "../format";
-import type { Comparison, Sex } from "../types";
+import type { Comparison } from "../types";
 
-const THIS_YEAR = new Date().getFullYear();
-
-/** Trends page: age grade and percentile at 5k to marathon for your age and sex. */
+/** Trends page: age grade and percentile at 5k to marathon for your age and sex. The
+ * age and sex themselves are set on My Profile. */
 export default function CompareCard() {
-  const { demo } = useAuth();
   const [data, setData] = useState<Comparison | null>(null);
-  const [editing, setEditing] = useState(false);
-  const [year, setYear] = useState("");
-  const [sex, setSex] = useState<Sex | "">("");
-  const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const load = () =>
-    api.comparison().then((c) => {
-      setData(c);
-      setYear(c.profile.birth_year ? String(c.profile.birth_year) : "");
-      setSex(c.profile.sex ?? "");
-    }, (e: Error) => setError(e.message));
   useEffect(() => {
-    load();
+    api.comparison().then(setData, (e: Error) => setError(e.message));
   }, []);
-
-  async function save(e: FormEvent) {
-    e.preventDefault();
-    setBusy(true);
-    setError(null);
-    try {
-      await api.saveProfile({ birth_year: year ? Number(year) : null, sex: sex || null });
-      await load();
-      setEditing(false);
-    } catch (err) {
-      setError((err as Error).message);
-    } finally {
-      setBusy(false);
-    }
-  }
 
   if (!data) return error ? <section className="card"><p className="error">{error}</p></section> : null;
   const { profile, rows, sources } = data;
   const complete = profile.age !== null && profile.sex !== null;
-  const showForm = !demo && (editing || !complete);
   const who = profile.sex === "female" ? "women" : "men";
   const anchors = [...new Set(rows.map((r) => r.anchor).filter(Boolean))];
 
@@ -53,53 +25,14 @@ export default function CompareCard() {
     <section className="card stack">
       <div className="page-header">
         <h2>How you compare</h2>
-        {complete && !showForm && !demo && (
-          <button className="link" onClick={() => setEditing(true)}>Edit age and sex</button>
-        )}
+        {complete && <Link to="/account">Change age or sex</Link>}
       </div>
 
-      {showForm ? (
-        <form className="stack" onSubmit={save}>
-          <p className="muted">
-            Add your year of birth and sex to see an age grade and a percentile for each distance. They're only used
-            for this comparison, and you can remove them any time.
-          </p>
-          <div className="row">
-            <label>
-              Year of birth
-              <input
-                type="number"
-                inputMode="numeric"
-                min="1920"
-                max={THIS_YEAR - 5}
-                required
-                value={year}
-                onChange={(e) => setYear(e.target.value)}
-                placeholder="1995"
-              />
-            </label>
-            <label>
-              Sex
-              <select required value={sex} onChange={(e) => setSex(e.target.value as Sex | "")}>
-                <option value="">Choose…</option>
-                <option value="female">Female</option>
-                <option value="male">Male</option>
-              </select>
-            </label>
-          </div>
-          <p className="muted small">
-            The published age-grading standards only exist for women and men, so those are the two options.
-          </p>
-          {error && <p className="error" role="alert">{error}</p>}
-          <div className="actions">
-            <button type="submit" disabled={busy}>{busy ? "Saving…" : "Save"}</button>
-            {complete && (
-              <button type="button" className="secondary" onClick={() => setEditing(false)} disabled={busy}>
-                Cancel
-              </button>
-            )}
-          </div>
-        </form>
+      {!complete ? (
+        <p className="info">
+          <Link to="/account">Go to My Profile</Link> to add your age and sex, and you'll see how your times compare
+          with other runners of your age.
+        </p>
       ) : rows.every((r) => r.time_s === null) ? (
         <p className="muted">Upload a race or a hard GPX run and your comparison appears here.</p>
       ) : (

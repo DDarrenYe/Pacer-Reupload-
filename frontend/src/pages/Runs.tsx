@@ -18,6 +18,8 @@ export default function Runs() {
   const [runs, setRuns] = useState<Run[] | null>(null);
   const [mode, setMode] = useState<"file" | "manual">("file");
   const [showAll, setShowAll] = useState(false);
+  // The add-a-run section starts closed once you have runs, so the list comes first.
+  const [adding, setAdding] = useState<boolean | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
   const { demo } = useAuth();
@@ -63,9 +65,26 @@ export default function Runs() {
     }
   }
 
+  // Decided once, when the list first loads: open only for a new user with no runs, and
+  // it then stays as it is (a first upload doesn't snap it shut).
+  useEffect(() => {
+    if (adding === null && runs !== null) setAdding(runs.length === 0);
+  }, [adding, runs]);
+  const addOpen = adding ?? false;
+
   return (
     <main>
       {!demo && <section className="card stack">
+        <button
+          className="disclosure"
+          aria-expanded={addOpen}
+          aria-controls="add-run"
+          onClick={() => setAdding(!addOpen)}
+        >
+          <span>Add a run</span>
+          <span aria-hidden="true">{addOpen ? "▴" : "▾"}</span>
+        </button>
+        {addOpen && <div id="add-run" className="stack">
         <div className="tabs" role="tablist" aria-label="Add a run">
           <button role="tab" aria-selected={mode === "file"} className={mode === "file" ? "tab active" : "tab"} onClick={() => setMode("file")}>
             Upload a file
@@ -75,6 +94,7 @@ export default function Runs() {
           </button>
         </div>
         {mode === "file" ? <UploadForm onUploaded={load} /> : <ManualRunForm onSaved={(run) => navigate(`/runs/${run.id}`)} />}
+        </div>}
       </section>}
       <section className="card">
         <h2>Your runs</h2>
@@ -84,7 +104,7 @@ export default function Runs() {
         )}
         {runs?.length === 0 && (
           <p className="muted">
-            No runs yet. Upload a GPX above, or enter a treadmill run manually.{" "}
+            No runs yet. Upload a GPX above, enter a treadmill run manually, or connect Strava on My Profile.{" "}
             <Link to="/welcome#export">How to get your runs out of Strava or Garmin</Link>
           </p>
         )}
