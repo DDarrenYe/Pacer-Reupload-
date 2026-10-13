@@ -31,6 +31,25 @@ This file records why the project is built the way it is: the choices I made, wh
 - The demo's best 10k first showed 55:06, a stretch inside a long run, while its 10k race was 43:24: GPS measured that race at 9.99 km, a hair under 10,000 m, so it never counted as a 10k. Allowing 2% short fixed it.
 - Average pace and this month's distance are worked out in the browser from the runs already loaded, so "this month" is your local month.
 
+### Runner titles
+- Every runner with at least 3 recent runs with km splits gets one title, shown under their name with the evidence: "8 of your 12 recent runs finished with a last km at least 3% quicker than your usual pace."
+- **How it's chosen:** each title is a pacing trait one run can show. Its score is the share of your recent runs (last 180 days, up to 30) that show it, and the highest share wins. Ties go to the more distinctive title.
+
+  | Title | A run shows it when… |
+  |---|---|
+  | The Rabbit | the first km is 3%+ quicker than the run's median, and the run fades |
+  | The Kicker | the last full km is 3%+ quicker than the median |
+  | The Metronome | km splits vary by 2% or less, with an even split |
+  | The Diesel | 8 km+, a first km 3%+ slower than the rest, then the rest varies by 2.5% or less |
+  | The Negative Splitter | a negative split that isn't just a last-km kick |
+  | The Surge Runner | a mid-run km 3%+ quicker than the km on either side |
+  | The Mountain Goat | 15 m+ of climbing per km, with splits varying by 3% or less |
+  | The Power Sprinter | your best 1k pace beats your best 5k pace by much more than Riegel's usual ~10% |
+- **Share of runs, not one standout run,** so a title describes how you usually run, and it changes as your running does.
+- If no trait shows at all, the runner still gets one title: The Metronome if their pacing is steady (median variation of 4% or less), otherwise The Surge Runner.
+- "Pace Setter" is already a rank, so the fast-starting archetype is called **The Rabbit** to avoid two meanings.
+- **Limits:** there's no per-km elevation, so the Mountain Goat uses climbing per km for the whole run. Manual runs have no splits, so they can't earn a title.
+
 ### What's deliberately left out
 - **Weight:** no public dataset links bodyweight to race times. A percentile "for your weight" would be invented, so it isn't asked for.
 - **Sex:** the published standards exist only for women and men, so those are the options, and the page says why. Leaving it blank simply skips the comparison.

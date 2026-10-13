@@ -196,8 +196,13 @@ export interface PersonalBest {
   date: string;
 }
 
+export type RunnerTitle =
+  | { locked: false; name: string; reason: string; runs_considered: number }
+  | { locked: true; runs_considered: number; needed: number };
+
 export interface RunnerCard {
   name: string | null;
   rank: OverallRank | null;
+  title: RunnerTitle;
   bests: PersonalBest[];
 }

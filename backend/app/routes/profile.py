@@ -1,17 +1,18 @@
-from datetime import date
+from datetime import UTC, date, datetime, timedelta
 from typing import Literal
 
 from fastapi import APIRouter
 from pydantic import BaseModel, Field, field_validator
-from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy import func, select
+from sqlalchemy.orm import Session, selectinload
 
 from app.analytics.compare import best_rank, compare, percentile_table
 from app.analytics.data import load_efforts
 from app.analytics.runner_card import personal_bests
+from app.analytics.titles import MAX_RUNS, MIN_RUNS, MIN_SPLITS, RunSplits, assign_title
 from app.auth import CurrentUserId, WritableUserId
 from app.db import DbSession
-from app.models import Profile, StravaConnection
+from app.models import BestEffort, Profile, Run, StravaConnection
 
 router = APIRouter(tags=["profile"])
 
@@ -120,6 +121,7 @@ def runner_card(user_id: CurrentUserId, db: DbSession) -> dict:
     return {
         "name": name,
         "rank": rank,
+        "title": _title(db, user_id),
         "bests": [
             {
                 "name": pb.name,
@@ -130,6 +132,48 @@ def runner_card(user_id: CurrentUserId, db: DbSession) -> dict:
             }
             for pb in personal_bests(db, user_id)
         ],
+    }
+
+
+TITLE_WINDOW_DAYS = 180
+
+
+def _title(db: Session, user_id) -> dict:
+    """Your runner title from your recent runs with splits, or how many more it needs."""
+    since = datetime.now(UTC) - timedelta(days=TITLE_WINDOW_DAYS)
+    runs = db.scalars(
+        select(Run)
+        .where(Run.user_id == user_id, Run.started_at >= since, Run.source != "manual")
+        .options(selectinload(Run.splits))
+        .order_by(Run.started_at.desc())
+        .limit(MAX_RUNS * 2)
+    ).all()
+    samples = [
+        RunSplits(
+            paces=tuple(s.pace_s_per_km for s in run.splits if not s.is_partial),
+            distance_m=run.distance_m,
+            split_type=run.split_type,
+            elevation_gain_m=run.elevation_gain_m,
+        )
+        for run in runs
+    ]
+    samples = [s for s in samples if len(s.paces) >= MIN_SPLITS]
+    bests = dict(
+        db.execute(
+            select(BestEffort.name, func.min(BestEffort.duration_s))
+            .join(Run, Run.id == BestEffort.run_id)
+            .where(Run.user_id == user_id, BestEffort.name.in_(["1k", "5k"]))
+            .group_by(BestEffort.name)
+        ).all()
+    )
+    title = assign_title(samples, bests.get("1k"), bests.get("5k"))
+    if title is None:
+        return {"locked": True, "runs_considered": len(samples), "needed": MIN_RUNS}
+    return {
+        "locked": False,
+        "name": title.name,
+        "reason": title.reason,
+        "runs_considered": title.runs_considered,
     }
 
 

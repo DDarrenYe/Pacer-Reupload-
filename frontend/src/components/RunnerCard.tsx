@@ -38,9 +38,23 @@ export default function RunnerCard({ runs }: { runs: Run[] }) {
         )}
       </div>
       <div className="runner-body">
-        <h2 className="runner-name">
-          {card?.name ?? <Link to="/account">Add your name</Link>}
-        </h2>
+        <div className="runner-heading">
+          <h2 className="runner-name">
+            {card?.name ?? <Link to="/account">Add your name</Link>}
+          </h2>
+          {card?.title &&
+            (card.title.locked ? (
+              <p className="muted small">
+                Your runner title unlocks after {card.title.needed} runs with km splits ({card.title.runs_considered} so
+                far).
+              </p>
+            ) : (
+              <>
+                <span className="runner-title">{card.title.name}</span>
+                <p className="muted small">{card.title.reason}</p>
+              </>
+            ))}
+        </div>
         <div className="runner-stats">
           <Stat label="Average pace" value={pace === null ? "–" : formatPace(pace)} />
           <Stat label={`${MONTH} distance`} value={`${(month / 1000).toFixed(1)} km`} />

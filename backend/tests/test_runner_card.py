@@ -29,7 +29,12 @@ def card(client, user=ALICE):
 
 
 def test_empty_card(client):
-    assert card(client) == {"name": None, "rank": None, "bests": []}
+    assert card(client) == {
+        "name": None,
+        "rank": None,
+        "title": {"locked": True, "runs_considered": 0, "needed": 3},
+        "bests": [],
+    }
 
 
 def test_bests_only_for_distances_you_have_run(client):

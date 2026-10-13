@@ -306,3 +306,16 @@ button.disclosure:focus-visible { outline: 2px solid var(--accent); outline-offs
 .runner-best:hover { border-color: var(--accent); }
 .runner-best-time { font-weight: 700; font-variant-numeric: tabular-nums; }
 @media (max-width: 600px) { .runner-card { justify-content: center; } .runner-rank { width: 100%; } }
+.runner-heading { display: grid; gap: 4px; justify-items: start; }
+.runner-heading p { margin: 0; }
+.runner-title {
+  display: inline-block;
+  padding: 2px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--accent);
+  background: var(--info-bg);
+  color: var(--text-primary);
+  font-weight: 700;
+  font-size: 0.95rem;
+  letter-spacing: 0.01em;
+}
