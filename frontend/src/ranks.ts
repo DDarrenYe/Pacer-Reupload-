@@ -14,6 +14,12 @@ export const RANK_FLOORS: Record<RankName, number> = {
   Apex: 90,
 };
 
+/** Ranks below Pace Setter split into divisions 3, 2 and 1, one per third of the range. */
+export const DIVISIONS = [3, 2, 1] as const;
+export function isDivided(rank: RankName): boolean {
+  return rank !== "Pace Setter" && rank !== "Apex";
+}
+
 /** "under 35%", "45–52%", "90%+". */
 export function rankRange(rank: RankName): string {
   const i = RANKS.indexOf(rank);

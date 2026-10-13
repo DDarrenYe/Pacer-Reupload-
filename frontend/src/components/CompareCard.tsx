@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 
 import { api } from "../api";
 import { describePercentile, formatDuration } from "../format";
-import { RANKS, rankRange } from "../ranks";
+import { DIVISIONS, RANKS, isDivided, rankRange } from "../ranks";
 import type { Comparison, OverallRank } from "../types";
 import RankMedal from "./RankMedal";
 
@@ -15,27 +15,36 @@ export function RankHeader({ overall }: { overall: OverallRank }) {
     <div className="rank-header">
       <RankMedal rank={overall.rank} size={72} />
       <div className="rank-body">
-        <div className="rank-name">{overall.rank}</div>
+        <div className="rank-name">{overall.label}</div>
         <p className="muted">
           From your {overall.source === "best time" ? "best" : "predicted"} {overall.distance}:{" "}
           {overall.age_grade.toFixed(1)}% age grade
         </p>
-        {overall.next_rank && overall.progress_pct !== null && overall.next_rank_age_grade !== null ? (
+        {overall.next_step && overall.progress_pct !== null && overall.next_step_age_grade !== null ? (
           <>
             <div
-              className="rank-progress"
+              className={overall.division !== null ? "rank-progress divided" : "rank-progress"}
               role="progressbar"
-              aria-label={`Progress to ${overall.next_rank}`}
+              aria-label={`Progress through ${overall.rank} to ${overall.next_rank}`}
               aria-valuemin={0}
               aria-valuemax={100}
               aria-valuenow={Math.round(overall.progress_pct)}
             >
               <div style={{ width: `${Math.min(100, Math.max(2, overall.progress_pct))}%` }} />
             </div>
+            {overall.division !== null && (
+              <div className="rank-divisions" aria-hidden="true">
+                {DIVISIONS.map((d) => (
+                  <span key={d} className={d === overall.division ? "current" : undefined}>
+                    {overall.rank} {d}
+                  </span>
+                ))}
+              </div>
+            )}
             <p className="small">
-              {(overall.next_rank_age_grade - overall.age_grade).toFixed(1)} points to <strong>{overall.next_rank}</strong>
-              {overall.next_rank_time_s !== null && (
-                <>: run a {overall.distance} in {formatDuration(overall.next_rank_time_s)} to get there.</>
+              {(overall.next_step_age_grade - overall.age_grade).toFixed(1)} points to <strong>{overall.next_step}</strong>
+              {overall.next_step_time_s !== null && (
+                <>: run a {overall.distance} in {formatDuration(overall.next_step_time_s)} to get there.</>
               )}
             </p>
           </>
@@ -62,7 +71,9 @@ function AllRanks({ sources }: { sources: Comparison["sources"] }) {
                 <RankMedal rank={r} size={40} />
                 <span className="rank-list-text">
                   <strong>{r}</strong>
-                  <span className="muted small">{rankRange(r)} age grade</span>
+                  <span className="muted small">
+                  {rankRange(r)} age grade{isDivided(r) && " · divisions 3, 2, 1"}
+                </span>
                 </span>
               </li>
             ))}
@@ -72,6 +83,10 @@ function AllRanks({ sources }: { sources: Comparison["sources"] }) {
               <strong>Ranks</strong> come from age grade, so they're fair across ages, sexes and distances. Your rank
               is your best age grade from a time you've actually run at 5k, 10k, half or marathon, or a prediction
               at a distance you've run near (long predictions don't count).
+            </li>
+            <li>
+              <strong>Divisions:</strong> each rank up to Emerald has three, 3 to 1, one for each third of its range
+              on the progress bar. Climb from 3 to 1, then on to the next rank's 3.
             </li>
             <li>
               <strong>Age grade</strong> compares your time with the best expected for your age and sex (100% is
@@ -155,7 +170,7 @@ export default function CompareCard() {
                       {r.rank ? (
                         <span className="rank-cell">
                           <RankMedal rank={r.rank} size={22} />
-                          {r.rank}
+                          {r.rank_label ?? r.rank}
                         </span>
                       ) : (
                         <span className="muted">–</span>

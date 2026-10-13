@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { RANKS, rankRange } from "./ranks";
+import { RANKS, isDivided, rankRange } from "./ranks";
 
 describe("ranks", () => {
   it("has eight, lowest first", () =>
@@ -11,4 +11,6 @@ describe("ranks", () => {
     expect(rankRange("Emerald")).toBe("70–80%");
     expect(rankRange("Apex")).toBe("90%+");
   });
+  it("splits every rank below Pace Setter into divisions", () =>
+    expect(RANKS.filter(isDivided)).toEqual(["Bronze", "Silver", "Gold", "Platinum", "Diamond", "Emerald"]));
 });

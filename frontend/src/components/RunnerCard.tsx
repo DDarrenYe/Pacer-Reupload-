@@ -27,7 +27,7 @@ export default function RunnerCard({ runs }: { runs: Run[] }) {
         {card?.rank ? (
           <>
             <RankMedal rank={card.rank.rank} size={96} />
-            <strong>{card.rank.rank}</strong>
+            <strong>{card.rank.label}</strong>
             <span className="muted small">{card.rank.age_grade.toFixed(1)}% age grade</span>
           </>
         ) : (

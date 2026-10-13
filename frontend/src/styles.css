@@ -288,6 +288,15 @@ button.disclosure:focus-visible { outline: 2px solid var(--accent); outline-offs
 .rank-name { font-size: 1.6rem; font-weight: 800; letter-spacing: -0.01em; }
 .rank-progress { height: 8px; border-radius: 999px; background: var(--border); overflow: hidden; }
 .rank-progress > div { height: 100%; background: var(--accent); border-radius: 999px; }
+/* Divided ranks: notches at a third and two thirds mark divisions 3, 2 and 1. */
+.rank-progress.divided { position: relative; }
+.rank-progress.divided::before,
+.rank-progress.divided::after { content: ""; position: absolute; top: 0; bottom: 0; width: 3px; background: var(--page); }
+.rank-progress.divided::before { left: calc(100% / 3 - 1.5px); }
+.rank-progress.divided::after { left: calc(200% / 3 - 1.5px); }
+.rank-divisions { display: grid; grid-template-columns: repeat(3, 1fr); font-size: 0.75rem; color: var(--text-muted); }
+.rank-divisions span { text-align: center; }
+.rank-divisions .current { color: var(--text-primary); font-weight: 700; }
 .rank-cell { display: inline-flex; align-items: center; gap: 6px; }
 .rank-list { list-style: none; padding: 0; margin: 8px 0 0; display: grid; gap: 8px; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); }
 .rank-list li { display: flex; align-items: center; gap: 10px; }

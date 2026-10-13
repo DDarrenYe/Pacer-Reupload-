@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import bisect
 import json
+import math
 from dataclasses import dataclass
 from datetime import date, timedelta
 from functools import cache
@@ -50,6 +51,10 @@ RANKS = [
     ("Pace Setter", 80.0),
     ("Apex", 90.0),
 ]
+# Each rank below Pace Setter splits into three divisions, one per third of its range:
+# 3 (lowest), 2, then 1, then the next rank's 3.
+DIVISIONS = 3
+UNDIVIDED = {"Pace Setter", "Apex"}
 
 
 @cache
@@ -92,6 +97,36 @@ class Rank:
         if self.next_floor is None:
             return None
         return round(100 * (grade - self.floor) / (self.next_floor - self.floor), 1)
+
+    @property
+    def divided(self) -> bool:
+        return self.name not in UNDIVIDED and self.next_floor is not None
+
+    def floors(self) -> list[float]:
+        """Where divisions 3, 2 and 1 start, rounded up to the 0.1% that age grades use."""
+        step = (self.next_floor - self.floor) / DIVISIONS
+        return [math.ceil(round((self.floor + i * step) * 10, 6)) / 10 for i in range(DIVISIONS)]
+
+    def division(self, grade: float) -> int | None:
+        """3, 2 or 1: which third of this rank's range the grade is in (1 is the top)."""
+        if not self.divided:
+            return None
+        reached = sum(grade >= floor for floor in self.floors())
+        return DIVISIONS + 1 - max(reached, 1)
+
+    def label(self, grade: float) -> str:
+        """e.g. "Gold 2", or just "Apex" for a rank without divisions."""
+        division = self.division(grade)
+        return self.name if division is None else f"{self.name} {division}"
+
+    def next_step(self, grade: float) -> tuple[str, float] | None:
+        """The next division up and the age grade it starts at, or None at the top."""
+        division = self.division(grade)
+        if division is not None and division > 1:
+            return f"{self.name} {division - 1}", self.floors()[DIVISIONS - division + 1]
+        if self.next_name is None:
+            return None
+        return rank_for(self.next_floor).label(self.next_floor), self.next_floor
 
 
 def rank_for(grade: float) -> Rank:
@@ -153,6 +188,7 @@ class ComparisonRow:
     rank: Rank | None = None
     # The time at this distance that reaches the next rank.
     next_rank_time_s: float | None = None
+    rank_label: str | None = None  # e.g. "Gold 2"
 
 
 def compare(efforts: list[Effort], age: int, sex: str, today: date) -> list[ComparisonRow]:
@@ -182,6 +218,7 @@ def compare(efforts: list[Effort], age: int, sex: str, today: date) -> list[Comp
                 next_rank_time_s=round(time_for_grade(rank.next_floor, distance, age, sex), 1)
                 if rank.next_floor
                 else None,
+                rank_label=rank.label(grade),
             )
         )
     return rows
@@ -202,6 +239,18 @@ class BestRank:
     rank: Rank
     next_rank_time_s: float | None
     source: str  # "best time" (a time you actually ran) or "prediction"
+    # The next division up (e.g. "Gold 1"), the age grade it starts at, and the time for it.
+    next_step: str | None = None
+    next_step_age_grade: float | None = None
+    next_step_time_s: float | None = None
+
+    @property
+    def division(self) -> int | None:
+        return self.rank.division(self.age_grade)
+
+    @property
+    def label(self) -> str:
+        return self.rank.label(self.age_grade)
 
 
 def best_rank(
@@ -223,4 +272,7 @@ def best_rank(
     next_time = (
         round(time_for_grade(rank.next_floor, distance, age, sex), 1) if rank.next_floor else None
     )
-    return BestRank(name, grade, rank, next_time, source)
+    step = rank.next_step(grade)
+    step_name, step_grade = step if step else (None, None)
+    step_time = round(time_for_grade(step_grade, distance, age, sex), 1) if step else None
+    return BestRank(name, grade, rank, next_time, source, step_name, step_grade, step_time)

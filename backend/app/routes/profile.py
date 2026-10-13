@@ -95,6 +95,7 @@ def comparison(user_id: CurrentUserId, db: DbSession) -> dict:
                 "faster_than_pct": r.percentile.faster_than_pct if r.percentile else None,
                 "group": r.percentile.group if r.percentile else None,
                 "rank": r.rank.name if r.rank else None,
+                "rank_label": r.rank_label,
                 "next_rank": r.rank.next_name if r.rank else None,
                 "next_rank_time_s": r.next_rank_time_s,
             }
@@ -188,6 +189,8 @@ def _overall(db: Session, user_id, age: int, sex: str, rows=None) -> dict | None
     return {
         "rank": best.rank.name,
         "tier": best.rank.tier,
+        "division": best.division,
+        "label": best.label,
         "distance": best.distance,
         "age_grade": best.age_grade,
         "source": best.source,
@@ -195,6 +198,9 @@ def _overall(db: Session, user_id, age: int, sex: str, rows=None) -> dict | None
         "next_rank_age_grade": best.rank.next_floor,
         "next_rank_time_s": best.next_rank_time_s,
         "progress_pct": best.rank.progress(best.age_grade),
+        "next_step": best.next_step,
+        "next_step_age_grade": best.next_step_age_grade,
+        "next_step_time_s": best.next_step_time_s,
     }
 
 

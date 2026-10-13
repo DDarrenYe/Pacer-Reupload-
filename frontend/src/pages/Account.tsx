@@ -50,7 +50,7 @@ export default function Account() {
           <Link to="/trends" className="rank-badge" title="See how you compare on Trends">
             <RankMedal rank={rank.rank} size={36} />
             <span>
-              {rank.rank} rank
+              {rank.label}
               <span className="muted small"> · {rank.age_grade.toFixed(1)}% age grade</span>
             </span>
           </Link>

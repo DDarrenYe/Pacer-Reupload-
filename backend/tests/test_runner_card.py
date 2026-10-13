@@ -114,7 +114,7 @@ def test_a_real_best_time_earns_a_rank(client):
     from app.analytics.compare import age_grade
 
     assert rank["age_grade"] == round(age_grade(1500, 5000, 32, "male"), 1)
-    assert rank["rank"] == "Gold"  # about 51%
+    assert rank["rank"] == "Gold" and rank["label"] == "Gold 1"  # about 51%
     # The Trends banner uses the same rule, so the two always agree.
     assert client.get("/comparison", headers=auth(ALICE)).json()["overall"] == rank
 

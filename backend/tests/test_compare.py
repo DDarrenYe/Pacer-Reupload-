@@ -262,6 +262,52 @@ def test_rank_progress():
     assert cmp.rank_for(95.0).progress(95.0) is None  # nothing above Apex
 
 
+@pytest.mark.parametrize(
+    ("grade", "label", "step"),
+    [
+        (0.0, "Bronze 3", ("Bronze 2", 11.7)),
+        (11.6, "Bronze 3", ("Bronze 2", 11.7)),
+        (11.7, "Bronze 2", ("Bronze 1", 23.4)),
+        (23.4, "Bronze 1", ("Silver 3", 35.0)),
+        (47.3, "Gold 3", ("Gold 2", 47.4)),
+        (60.0, "Diamond 3", ("Diamond 2", 63.4)),
+        (63.3, "Diamond 3", ("Diamond 2", 63.4)),
+        (63.4, "Diamond 2", ("Diamond 1", 66.7)),
+        (66.7, "Diamond 1", ("Emerald 3", 70.0)),
+        (79.9, "Emerald 1", ("Pace Setter", 80.0)),
+        (85.0, "Pace Setter", ("Apex", 90.0)),
+        (95.0, "Apex", None),
+    ],
+)
+def test_rank_divisions(grade, label, step):
+    rank = cmp.rank_for(grade)
+    assert rank.label(grade) == label
+    assert rank.next_step(grade) == step
+
+
+def test_divisions_split_each_rank_in_thirds():
+    for name, floor in cmp.RANKS:
+        rank = cmp.rank_for(floor)
+        if name in cmp.UNDIVIDED:
+            assert rank.division(floor) is None
+            continue
+        floors = rank.floors()
+        assert floors[0] == floor and len(floors) == 3
+        span = (rank.next_floor - floor) / 3
+        # each boundary is the true third, rounded up to the next 0.1%
+        assert all(0 <= f - (floor + i * span) < 0.1 for i, f in enumerate(floors))
+        assert [rank.division(f) for f in floors] == [3, 2, 1]
+
+
+def test_time_for_next_step_earns_it():
+    best = cmp.best_rank([], [("10k", 10000, 2830)], 32, "male")  # 56%
+    assert best.label == "Platinum 2" and best.division == 2
+    assert best.next_step == "Platinum 1"
+    grade = round(cmp.age_grade(best.next_step_time_s, 10000, 32, "male"), 1)  # as the app rounds
+    assert cmp.rank_for(grade).label(grade) == "Platinum 1"
+    assert grade == pytest.approx(best.next_step_age_grade, abs=0.01)
+
+
 def test_time_for_next_rank_earns_it(percentiles):
     rows = cmp.compare([race(10, 10, 45)], 32, "male", TODAY)
     ten = rows[1]
@@ -295,8 +341,11 @@ def test_comparison_includes_overall_rank(client, percentiles):
     body = client.get("/comparison", headers=auth(ALICE)).json()
     overall = body["overall"]
     assert overall["rank"] == "Platinum" and overall["tier"] == 4
+    assert overall["label"] == f"Platinum {overall['division']}"
+    assert overall["next_step"] and overall["next_step_age_grade"] > overall["age_grade"]
     best = max((r for r in body["rows"] if not r["extrapolated"]), key=lambda r: r["age_grade"])
     assert overall["distance"] == best["name"] and overall["age_grade"] == best["age_grade"]
     assert overall["next_rank"] == "Diamond" and 0 < overall["progress_pct"] < 100
-    assert overall["next_rank_time_s"] < best["time_s"]
+    assert overall["next_rank_time_s"] <= overall["next_step_time_s"] < best["time_s"]
     assert body["rows"][1]["rank"] == "Platinum"
+    assert body["rows"][1]["rank_label"].startswith("Platinum ")

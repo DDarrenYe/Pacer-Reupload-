@@ -165,6 +165,7 @@ export interface ComparisonRow {
   faster_than_pct: number | null;
   group: string | null;
   rank: RankName | null;
+  rank_label: string | null; // e.g. "Gold 2"
   next_rank: RankName | null;
   next_rank_time_s: number | null;
 }
@@ -172,6 +173,8 @@ export interface ComparisonRow {
 export interface OverallRank {
   rank: RankName;
   tier: number;
+  division: number | null; // 3 (lowest) to 1, or null for Pace Setter and Apex
+  label: string; // e.g. "Gold 2"
   distance: string;
   age_grade: number;
   source: "best time" | "prediction";
@@ -179,6 +182,9 @@ export interface OverallRank {
   next_rank_age_grade: number | null;
   next_rank_time_s: number | null;
   progress_pct: number | null;
+  next_step: string | null; // the next division up, e.g. "Gold 1"
+  next_step_age_grade: number | null;
+  next_step_time_s: number | null;
 }
 
 export interface Comparison {
