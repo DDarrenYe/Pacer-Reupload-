@@ -315,14 +315,48 @@ def test_time_for_next_rank_earns_it(percentiles):
     assert cmp.age_grade(ten.next_rank_time_s, 10000, 32, "male") == pytest.approx(60.0, abs=0.01)
 
 
-def test_best_row_ignores_extrapolated_distances():
-    row = lambda name, grade, extrapolated: cmp.ComparisonRow(  # noqa: E731
-        name, 0, 1, None, extrapolated, grade, None, None, cmp.rank_for(grade)
+def test_best_row_only_uses_ranked_rows():
+    row = lambda name, grade, rank: cmp.ComparisonRow(  # noqa: E731
+        name, 0, 1, None, False, grade, None, None, cmp.rank_for(grade) if rank else None
     )
-    rows = [row("5k", 55, False), row("Marathon", 70, True)]
-    assert cmp.best_row(rows).name == "5k"
-    assert cmp.best_row([row("Marathon", 70, True)]).name == "Marathon"
+    assert cmp.best_row([row("5k", 55, True), row("Marathon", 70, False)]).name == "5k"
+    assert cmp.best_row([row("Marathon", 70, False)]) is None  # nothing earned: unranked
     assert cmp.best_row([]) is None
+
+
+def test_extrapolated_and_unrun_long_distances_are_unranked(percentiles):
+    efforts = [race(10, 10, 45)]
+    rows = {r.name: r for r in cmp.compare(efforts, 32, "male", TODAY, longest_run_m=10000)}
+    assert rows["10k"].rank is not None and rows["15k"].rank is not None
+    half = rows["Half marathon"]
+    assert half.rank is None and half.rank_label is None
+    assert half.time_s and half.age_grade  # still predicted and graded, just not ranked
+    assert rows["Marathon"].extrapolated and rows["Marathon"].rank is None
+    assert rows["Marathon"].next_rank_time_s is None
+
+
+def test_long_distances_rank_once_you_have_run_them(percentiles):
+    efforts = [race(10, 10, 45)]
+    ran_half = {r.name: r for r in cmp.compare(efforts, 32, "male", TODAY, longest_run_m=20700)}
+    # Raced only a 10k, but has run (at least 98% of) a half: the half is ranked
+    assert ran_half["Half marathon"].rank is not None
+    assert ran_half["Marathon"].rank is None
+    short = {r.name: r for r in cmp.compare(efforts, 32, "male", TODAY, longest_run_m=20500)}
+    assert short["Half marathon"].rank is None
+
+
+def test_extrapolated_short_distance_is_unranked(percentiles):
+    # From a 5k only, a 15k is over twice as far: predicted, but not ranked
+    rows = {r.name: r for r in cmp.compare([race(10, 5, 22)], 32, "male", TODAY)}
+    assert rows["15k"].extrapolated and rows["15k"].rank is None
+    assert rows["5k"].rank is not None
+
+
+def test_no_rank_from_only_long_extrapolations(percentiles):
+    assert cmp.ranked("Marathon", 42195, False, None) is False
+    assert cmp.ranked("Marathon", 42195, True, 42195) is True
+    assert cmp.ranked("5k", 5000, True, 50000) is False
+    assert cmp.ranked("10k", 10000, False, 0) is True
 
 
 def test_comparison_includes_overall_rank(client, percentiles):

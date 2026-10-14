@@ -78,7 +78,9 @@ def comparison(user_id: CurrentUserId, db: DbSession) -> dict:
     }
     if profile.age is None or profile.sex is None:
         return {"profile": profile, "rows": [], "overall": None, "sources": sources}
-    rows = compare(load_efforts(db, user_id), profile.age, profile.sex, date.today())
+    rows = compare(
+        load_efforts(db, user_id), profile.age, profile.sex, date.today(), _longest_run(db, user_id)
+    )
     overall = _overall(db, user_id, profile.age, profile.sex, rows)
     return {
         "profile": profile,
@@ -181,7 +183,7 @@ def _title(db: Session, user_id) -> dict:
 def _overall(db: Session, user_id, age: int, sex: str, rows=None) -> dict | None:
     """Your rank, from your best real time or prediction (see compare.best_rank)."""
     if rows is None:
-        rows = compare(load_efforts(db, user_id), age, sex, date.today())
+        rows = compare(load_efforts(db, user_id), age, sex, date.today(), _longest_run(db, user_id))
     bests = [(pb.name, pb.distance_m, pb.time_s) for pb in personal_bests(db, user_id)]
     best = best_rank(rows, bests, age, sex)
     if best is None:
@@ -202,6 +204,11 @@ def _overall(db: Session, user_id, age: int, sex: str, rows=None) -> dict | None
         "next_step_age_grade": best.next_step_age_grade,
         "next_step_time_s": best.next_step_time_s,
     }
+
+
+def _longest_run(db: Session, user_id) -> float:
+    """Your longest run ever, in metres (0 with no runs)."""
+    return db.scalar(select(func.max(Run.distance_m)).where(Run.user_id == user_id)) or 0.0
 
 
 def _profile(db: Session, user_id) -> Profile | None:

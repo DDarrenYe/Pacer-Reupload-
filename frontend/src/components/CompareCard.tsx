@@ -82,7 +82,8 @@ function AllRanks({ sources }: { sources: Comparison["sources"] }) {
             <li>
               <strong>Ranks</strong> come from age grade, so they're fair across ages, sexes and distances. Your rank
               is your best age grade from a time you've actually run at 5k, 10k, half or marathon, or a prediction
-              at a distance you've run near (long predictions don't count).
+              at a distance you've run near. Extrapolated predictions are never ranked, and the half marathon and
+              marathon stay unranked until you've run that far.
             </li>
             <li>
               <strong>Divisions:</strong> each rank up to Emerald has three, 3 to 1, one for each third of its range
@@ -139,7 +140,13 @@ export default function CompareCard() {
         <p className="muted">Upload a race or a hard GPX run and your comparison appears here.</p>
       ) : (
         <>
-          {overall && <RankHeader overall={overall} />}
+          {overall ? (
+            <RankHeader overall={overall} />
+          ) : (
+            <p className="info">
+              <strong>Unranked.</strong> Run a 5k, 10k or 15k (or a half or marathon) and your rank appears here.
+            </p>
+          )}
           <p className="muted">
             Based on your predicted times, for {who} aged {profile.age}
             {anchors.length > 0 && <>, starting from {anchors.join("; ")}</>}.
@@ -171,6 +178,17 @@ export default function CompareCard() {
                         <span className="rank-cell">
                           <RankMedal rank={r.rank} size={22} />
                           {r.rank_label ?? r.rank}
+                        </span>
+                      ) : r.time_s !== null ? (
+                        <span
+                          className="muted"
+                          title={
+                            r.name === "Half marathon" || r.name === "Marathon"
+                              ? `Ranked once you've run a ${r.name.toLowerCase()}`
+                              : "Extrapolated predictions aren't ranked"
+                          }
+                        >
+                          Unranked
                         </span>
                       ) : (
                         <span className="muted">–</span>

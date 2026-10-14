@@ -191,10 +191,31 @@ class ComparisonRow:
     rank_label: str | None = None  # e.g. "Gold 2"
 
 
-def compare(efforts: list[Effort], age: int, sex: str, today: date) -> list[ComparisonRow]:
-    """Your predicted time at each distance, its age grade and percentile."""
+# The half and the marathon are only ranked once you've actually run that far (a run
+# up to 2% short counts, as GPS often measures a little short).
+RUN_IT_FIRST = {"Half marathon", "Marathon"}
+RAN_IT_SHARE = 0.98
+
+
+def ranked(name: str, distance_m: float, extrapolated: bool, longest_run_m: float | None) -> bool:
+    """Whether a predicted time can earn a rank. The half and marathon need you to have run
+    the distance (then the prediction stands on a real run, even if your fastest efforts are
+    shorter); anything else just mustn't be extrapolated."""
+    if name in RUN_IT_FIRST:
+        return longest_run_m is not None and longest_run_m >= RAN_IT_SHARE * distance_m
+    return not extrapolated
+
+
+def compare(
+    efforts: list[Effort], age: int, sex: str, today: date, longest_run_m: float | None = None
+) -> list[ComparisonRow]:
+    """Your predicted time at each distance, its age grade and percentile, and a rank where
+    it's earned (see `ranked`). `longest_run_m` is your longest run ever; it defaults to your
+    longest effort."""
     recent = envelope(efforts, before=today + timedelta(days=1))
     longest = max((e.distance_m for e in recent), default=0.0)
+    if longest_run_m is None:
+        longest_run_m = max((e.distance_m for e in efforts), default=0.0)
     rows = []
     for name, distance in DISTANCES.items():
         predicted = predict_at(efforts, distance, today)
@@ -203,33 +224,33 @@ def compare(efforts: list[Effort], age: int, sex: str, today: date) -> list[Comp
             continue
         time_s, anchor = predicted
         grade = round(age_grade(time_s, distance, age, sex), 1)
-        rank = rank_for(grade)
+        extrapolated = bool(longest) and distance > EXTRAPOLATION_RATIO * longest
+        rank = rank_for(grade) if ranked(name, distance, extrapolated, longest_run_m) else None
         rows.append(
             ComparisonRow(
                 name=name,
                 distance_m=distance,
                 time_s=round(time_s, 1),
                 anchor=effort_label(anchor),
-                extrapolated=bool(longest) and distance > EXTRAPOLATION_RATIO * longest,
+                extrapolated=extrapolated,
                 age_grade=grade,
                 band=band_label(grade),
                 percentile=percentile(grade, age, sex),
                 rank=rank,
                 next_rank_time_s=round(time_for_grade(rank.next_floor, distance, age, sex), 1)
-                if rank.next_floor
+                if rank and rank.next_floor
                 else None,
-                rank_label=rank.label(grade),
+                rank_label=rank.label(grade) if rank else None,
             )
         )
     return rows
 
 
 def best_row(rows: list[ComparisonRow]) -> ComparisonRow | None:
-    """Your best predicted age grade, ignoring extrapolated distances unless there's
-    nothing else (a marathon guessed from a 5k isn't earned)."""
-    graded = [r for r in rows if r.age_grade is not None]
-    solid = [r for r in graded if not r.extrapolated] or graded
-    return max(solid, key=lambda r: r.age_grade, default=None)
+    """Your best predicted age grade among the rows that earn a rank (a marathon guessed
+    from a 5k isn't earned)."""
+    earned = [r for r in rows if r.rank is not None and r.age_grade is not None]
+    return max(earned, key=lambda r: r.age_grade, default=None)
 
 
 @dataclass(frozen=True)
