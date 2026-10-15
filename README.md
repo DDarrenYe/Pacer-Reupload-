@@ -89,7 +89,7 @@ On Render, go to **New → Blueprint**, pick this repo and branch, and fill in `
 Leave the variables empty and the Strava card simply doesn't appear. Check [Strava's API Agreement](https://www.strava.com/legal/api) before inviting other people: new apps are limited to very few athletes until Strava reviews them.
 
 ### 6. Deploy the front end to Vercel
-On Vercel, go to **Add New → Project**, import this repo, set **Root Directory** to `frontend`, and add the three `VITE_*` variables. Point `VITE_API_URL` at the Render URL. `vercel.json` sends every path to the app, so links like `/runs/<id>` work on refresh. In Supabase, go to **Authentication → URL Configuration** and set the Site URL to the Vercel address, so sign-up confirmation emails link back to the app.
+On Vercel, go to **Add New → Project**, import this repo, set **Root Directory** to `frontend`, and add the three `VITE_*` variables. Point `VITE_API_URL` at the Render URL. `vercel.json` sends every path to the app, so links like `/runs/<id>` work on refresh. In Supabase, go to **Authentication → URL Configuration**, set the Site URL to the Vercel address, and add `https://<your-app>.vercel.app/**` and `http://localhost:5173/**` to Redirect URLs, so sign-up confirmation emails link back to the site you signed up on (otherwise they go to Supabase's default, `localhost:3000`).
 
 ## Tests and lint
 ```bash

@@ -29,7 +29,12 @@ export default function Login() {
     const { data, error } =
       mode === "signin"
         ? await supabase.auth.signInWithPassword({ email, password })
-        : await supabase.auth.signUp({ email, password });
+        : await supabase.auth.signUp({
+            email,
+            password,
+            // Bring the confirmation link back to this site (it must be in Supabase's Redirect URLs).
+            options: { emailRedirectTo: window.location.origin },
+          });
     setBusy(false);
     if (error) setMessage({ kind: "error", text: error.message });
     else if (mode === "signup" && !data.session)
