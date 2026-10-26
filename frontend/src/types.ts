@@ -90,6 +90,8 @@ export interface Week {
   distance_km: number;
   avg_pace_s_per_km: number | null;
   predicted_5k_s: number | null;
+  /** Total climb that week, from GPS runs (GPX or Strava); null if none had elevation. */
+  elevation_gain_m: number | null;
 }
 
 export interface LoadDay {

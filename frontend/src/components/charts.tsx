@@ -129,7 +129,7 @@ export function LineChart({ title, labels, values, format, lowerIsBetter, refere
   );
 }
 
-export function BarChart({ title, labels, values, format }: ChartProps) {
+export function BarChart({ title, note, labels, values, format }: ChartProps & { note?: string }) {
   const c = useChartColors();
   const options: ChartOptions<"bar"> = {
     responsive: true,
@@ -149,7 +149,7 @@ export function BarChart({ title, labels, values, format }: ChartProps) {
     },
   };
   return (
-    <Frame title={title}>
+    <Frame title={title} note={note}>
       <Bar
         options={options}
         data={{

@@ -118,6 +118,13 @@ export default function Trends() {
         {weeks.length === 0 && <p className="muted">Upload a run to see your weekly trends.</p>}
         <div className="charts">
           <BarChart title="Weekly distance" labels={weekLabels} values={weeks.map((w) => w.distance_km)} format={(v) => `${Math.round(v)} km`} />
+          <BarChart
+            title="Weekly elevation gain"
+            note="GPS runs only"
+            labels={weekLabels}
+            values={weeks.map((w) => w.elevation_gain_m)}
+            format={(v) => `${Math.round(v)} m`}
+          />
           <LineChart title="Average pace" labels={weekLabels} values={weeks.map((w) => w.avg_pace_s_per_km)} format={formatDuration} lowerIsBetter />
           <LineChart title="Predicted 5k" labels={weekLabels} values={weeks.map((w) => w.predicted_5k_s)} format={formatDuration} lowerIsBetter />
           {loadWithRatio.length > 0 ? (

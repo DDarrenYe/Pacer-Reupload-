@@ -13,24 +13,29 @@ class WeekRow:
     distance_km: float
     avg_pace_s_per_km: float | None
     predicted_5k_s: float | None
+    # Total climb from runs with elevation (GPX uploads and Strava imports); None when
+    # none of the week's runs have any (treadmill, manual or CSV only).
+    elevation_gain_m: float | None = None
 
 
 def weekly_trends(
-    runs: list[tuple[date, float, float]],
+    runs: list[tuple[date, float, float, float | None]],
     efforts: list[Effort],
     user_id: str,
     today: date,
     weeks: int,
 ) -> list[WeekRow]:
-    """runs: (day, distance_m, moving_time_s). Weeks start on Monday; oldest first."""
+    """runs: (day, distance_m, moving_time_s, elevation_gain_m or None). Weeks start on
+    Monday; oldest first."""
     this_monday = today - timedelta(days=today.weekday())
     rows = []
     for i in range(weeks - 1, -1, -1):
         start = this_monday - timedelta(weeks=i)
         end = start + timedelta(days=7)
-        in_week = [(d, m, t) for d, m, t in runs if start <= d < end]
-        dist = sum(m for _, m, _ in in_week)
-        moving = sum(t for _, _, t in in_week)
+        in_week = [r for r in runs if start <= r[0] < end]
+        dist = sum(r[1] for r in in_week)
+        moving = sum(r[2] for r in in_week)
+        gains = [r[3] for r in in_week if r[3] is not None]
         rows.append(
             WeekRow(
                 week_start=start,
@@ -41,6 +46,7 @@ def weekly_trends(
                 predicted_5k_s=riegel_5k_as_of(
                     efforts, user_id, min(end - timedelta(days=1), today)
                 ),
+                elevation_gain_m=round(sum(gains)) if gains else None,
             )
         )
     return rows

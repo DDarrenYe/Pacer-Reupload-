@@ -148,7 +148,8 @@ Three filters were added, each because a test or seeded data showed the model le
 - With 2 runners and 6 test pairs, Riegel's fixed exponent beat both fitted models. I didn't tune the model to win on my own synthetic data, because that would be overfitting to the generator. The app shows the accuracy table to users, and it says "not enough data" below 3 test pairs.
 
 ### Trends charts
-- Weekly distance (bars, starting at zero), average pace and predicted 5k (lines, faster at the top), and ACWR with dashed reference lines at 0.8 and 1.5 named in the caption. One measure per chart, as before. Dense daily series hide their point markers until hovered, and the charts start at the first week with a run.
+- Weekly distance and weekly elevation gain (bars, starting at zero), average pace and predicted 5k (lines, faster at the top), and ACWR with dashed reference lines at 0.8 and 1.5 named in the caption. One measure per chart, as before. Dense daily series hide their point markers until hovered, and the charts start at the first week with a run.
+- Elevation gain comes from GPS runs: GPX uploads and Strava imports (rebuilt from Strava's altitude stream, so the same climb filter applies to both). Treadmill, manual and CSV runs have none, so a week with only those shows no bar rather than a misleading 0 m.
 
 ---
 

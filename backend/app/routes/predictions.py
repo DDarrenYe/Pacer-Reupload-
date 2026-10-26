@@ -47,10 +47,13 @@ def get_trends(
     db: DbSession,
     weeks: Annotated[int, Query(ge=4, le=104)] = 26,
 ) -> list[WeekRow]:
-    """Weekly distance, average pace and predicted 5k (Riegel), oldest week first."""
+    """Weekly distance, average pace, elevation gain and predicted 5k (Riegel), oldest
+    week first."""
     rows = db.execute(
-        select(Run.started_at, Run.distance_m, Run.moving_time_s).where(Run.user_id == user_id)
+        select(Run.started_at, Run.distance_m, Run.moving_time_s, Run.elevation_gain_m).where(
+            Run.user_id == user_id
+        )
     ).all()
-    runs = [(started.date(), dist, moving) for started, dist, moving in rows]
+    runs = [(started.date(), dist, moving, gain) for started, dist, moving, gain in rows]
     today = datetime.now(UTC).date()
     return weekly_trends(runs, load_efforts(db, user_id), str(user_id), today, weeks)

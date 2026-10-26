@@ -27,7 +27,7 @@ Python, FastAPI, SQLAlchemy, Alembic, pandas, NumPy, statsmodels, gpxpy · Postg
 | POST | `/runs/{id}/reprocess` | ✔ | Redo parsing and analytics from the stored original file |
 | DELETE | `/runs/{id}` | ✔ | Delete a run and its stored file |
 | GET | `/training-load?days=56` | ✔ | Daily load, 7-day acute, 28-day chronic and ACWR |
-| GET | `/trends?weeks=26` | ✔ | Weekly distance, average pace and predicted 5k |
+| GET | `/trends?weeks=26` | ✔ | Weekly distance, elevation gain, average pace and predicted 5k |
 | GET | `/predictions` | ✔ | 5k, 10k, half and marathon predictions by three methods |
 | GET | `/predictions/evaluation` | ✔ | Accuracy of each method (MAE, time-ordered test; aggregate only) |
 | GET | `/strava` | ✔ | Whether Strava import is available and connected |

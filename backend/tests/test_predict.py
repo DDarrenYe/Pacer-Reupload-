@@ -196,9 +196,10 @@ def test_weekly_trends():
     today = date(2026, 3, 18)  # a Wednesday
     monday = date(2026, 3, 16)
     runs = [
-        (monday, 5000, 1500),
-        (monday + timedelta(days=1), 10000, 3000),
-        (monday - timedelta(days=7), 8000, 2400),
+        (monday, 5000, 1500, 40.4),
+        (monday + timedelta(days=1), 10000, 3000, 85.0),
+        (monday + timedelta(days=1), 3000, 900, None),  # treadmill: no elevation
+        (monday - timedelta(days=7), 8000, 2400, None),
     ]
     efforts = [Effort("me", "x", monday, 5000, 1500)]
     rows = weekly_trends(runs, efforts, "me", today, weeks=3)
@@ -207,8 +208,10 @@ def test_weekly_trends():
         monday - timedelta(days=7),
         monday,
     ]
-    assert [r.distance_km for r in rows] == [0, 8, 15]
+    assert [r.distance_km for r in rows] == [0, 8, 18]
     assert rows[-1].avg_pace_s_per_km == 300
+    # Climb sums only the runs that have it; a week with none has no value, not 0
+    assert [r.elevation_gain_m for r in rows] == [None, None, 125]
     assert rows[0].avg_pace_s_per_km is None
     assert rows[-1].predicted_5k_s == 1500
     assert rows[0].predicted_5k_s is None

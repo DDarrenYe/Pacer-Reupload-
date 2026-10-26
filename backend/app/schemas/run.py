@@ -137,6 +137,7 @@ class WeekOut(BaseModel):
     distance_km: float
     avg_pace_s_per_km: float | None
     predicted_5k_s: float | None
+    elevation_gain_m: float | None
 
 
 # Typos like 50 km in 20 minutes are caught by these pace limits (per km).
