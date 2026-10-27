@@ -7,6 +7,7 @@ import ManualRunForm from "../components/ManualRunForm";
 import RunnerCard from "../components/RunnerCard";
 import UploadForm from "../components/UploadForm";
 import { formatDate, formatDistance, formatDuration, formatPace } from "../format";
+import { runMeta } from "../runMeta";
 import { describeSync } from "../strava";
 import type { Run, StravaStatus } from "../types";
 import { useSlowNotice } from "../useSlowNotice";
@@ -73,102 +74,85 @@ export default function Runs() {
   }, [adding, runs]);
   const addOpen = adding ?? false;
 
+  const shown = runs ? (showAll ? runs : runs.slice(0, RECENT)) : [];
+
   return (
     <main>
       {runs && runs.length > 0 && <RunnerCard runs={runs} />}
-      {!demo && <section className="card stack">
-        <button
-          className="disclosure"
-          aria-expanded={addOpen}
-          aria-controls="add-run"
-          onClick={() => setAdding(!addOpen)}
-        >
-          <span>Add a run</span>
-          <span aria-hidden="true">{addOpen ? "▴" : "▾"}</span>
-        </button>
-        {addOpen && <div id="add-run" className="stack">
-        <div className="tabs" role="tablist" aria-label="Add a run">
-          <button role="tab" aria-selected={mode === "file"} className={mode === "file" ? "tab active" : "tab"} onClick={() => setMode("file")}>
-            Upload a file
-          </button>
-          <button role="tab" aria-selected={mode === "manual"} className={mode === "manual" ? "tab active" : "tab"} onClick={() => setMode("manual")}>
-            Enter manually
-          </button>
-        </div>
-        {mode === "file" ? <UploadForm onUploaded={load} /> : <ManualRunForm onSaved={(run) => navigate(`/runs/${run.id}`)} />}
-        </div>}
-      </section>}
       <section className="card">
-        <h2>Your runs</h2>
+        <div className="section-head">
+          <h2>{runs && runs.length > 0 ? "Recent runs" : "Your runs"}</h2>
+          {!demo && (
+            <div className="actions">
+              {strava?.connected && (
+                <button className="secondary" onClick={syncStrava} disabled={stravaSync.busy}>
+                  {stravaSync.busy ? "Syncing…" : "Sync Strava"}
+                </button>
+              )}
+              <button className={addOpen ? "secondary" : undefined} aria-expanded={addOpen} aria-controls="add-run" onClick={() => setAdding(!addOpen)}>
+                {addOpen ? "Close" : "+ Add a run"}
+              </button>
+            </div>
+          )}
+        </div>
+        {!demo && addOpen && (
+          <div id="add-run" className="add-panel stack">
+            <div className="tabs" role="tablist" aria-label="Add a run">
+              <button role="tab" aria-selected={mode === "file"} className={mode === "file" ? "tab active" : "tab"} onClick={() => setMode("file")}>
+                Upload a file
+              </button>
+              <button role="tab" aria-selected={mode === "manual"} className={mode === "manual" ? "tab active" : "tab"} onClick={() => setMode("manual")}>
+                Enter manually
+              </button>
+            </div>
+            {mode === "file" ? <UploadForm onUploaded={load} /> : <ManualRunForm onSaved={(run) => navigate(`/runs/${run.id}`)} />}
+          </div>
+        )}
         {error && <p className="error">{error}</p>}
         {runs === null && !error && (
           <p className="muted">{slow ? "Waking up the server; this can take up to a minute…" : "Loading…"}</p>
         )}
         {runs?.length === 0 && (
           <p className="muted">
-            No runs yet. Upload a GPX above, enter a treadmill run manually, or connect Strava on My Profile.{" "}
+            No runs yet. Upload a GPX, enter a treadmill run manually, or connect Strava on My Profile.{" "}
             <Link to="/welcome#export">How to get your runs out of Strava or Garmin</Link>
           </p>
         )}
         {recalc.message && <p className="info" role="status">{recalc.message}</p>}
         {stravaSync.message && <p className="info" role="status">{stravaSync.message}</p>}
         {runs && runs.length > 0 && (
-          <div className="table-scroll">
-            <table id="runs-table">
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>Run</th>
-                  <th className="num">Distance</th>
-                  <th className="num">Moving time</th>
-                  <th className="num">Pace</th>
-                  <th>Splits</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(showAll ? runs : runs.slice(0, RECENT)).map((r) => (
-                  <tr key={r.id}>
-                    <td>{formatDate(r.started_at)}</td>
-                    <td>
-                      <Link to={`/runs/${r.id}`}>{r.name ?? "Untitled run"}</Link>
-                      <span className="tag">{r.surface}</span>
-                      {r.is_race && <span className="tag">race</span>}
-                      {r.strava_activity_id !== null && <span className="tag">Strava</span>}
-                    </td>
-                    <td className="num">{formatDistance(r.distance_m)}</td>
-                    <td className="num">{formatDuration(r.moving_time_s)}</td>
-                    <td className="num">{formatPace(r.avg_pace_s_per_km)}</td>
-                    <td>{r.split_type ?? "–"}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <ul id="runs-list" className="run-list" aria-label="Runs, newest first">
+            {shown.map((r) => {
+              const d = new Date(r.started_at);
+              return (
+                <li key={r.id} className="run-row">
+                  <span className="run-date" aria-label={formatDate(r.started_at)}>
+                    <span className="run-day" aria-hidden="true">{d.getDate()}</span>
+                    <span className="run-month" aria-hidden="true">{d.toLocaleDateString(undefined, { month: "short" })}</span>
+                  </span>
+                  <span className="run-main">
+                    <Link to={`/runs/${r.id}`}>{r.name ?? "Untitled run"}</Link>
+                    <span className="run-meta">{runMeta(r)}</span>
+                  </span>
+                  <span className="run-num strong">{formatDistance(r.distance_m)}</span>
+                  <span className="run-num run-time">{formatDuration(r.moving_time_s)}</span>
+                  <span className="run-num run-pace">{formatPace(r.avg_pace_s_per_km)}</span>
+                </li>
+              );
+            })}
+          </ul>
         )}
-        {runs && runs.length > RECENT && (
-          <div className="list-toggle">
-            <span className="muted">
-              Showing {showAll ? runs.length : RECENT} of {runs.length}
-            </span>
-            <button
-              className="link"
-              aria-expanded={showAll}
-              aria-controls="runs-table"
-              onClick={() => setShowAll((v) => !v)}
-            >
-              {showAll ? `Show only the ${RECENT} most recent ▴` : `Show all ${runs.length} runs ▾`}
-            </button>
-          </div>
-        )}
-        {!demo && (strava?.connected || (runs && runs.length > 0)) && (
-          <div className="actions" style={{ marginTop: 12 }}>
-            {strava?.connected && (
-              <button onClick={syncStrava} disabled={stravaSync.busy}>
-                {stravaSync.busy ? "Syncing…" : "Sync from Strava"}
+        {runs && runs.length > 0 && (
+          <div className="list-foot">
+            {runs.length > RECENT ? (
+              <button className="link" aria-expanded={showAll} aria-controls="runs-list" onClick={() => setShowAll((v) => !v)}>
+                {showAll ? `Show only the ${RECENT} most recent ▴` : `Show all ${runs.length} runs ▾`}
               </button>
+            ) : (
+              <span className="muted small">{runs.length} run{runs.length === 1 ? "" : "s"}</span>
             )}
-            {runs && runs.length > 0 && (
-              <button className="secondary" onClick={recalculateAll} disabled={recalc.busy}>
+            {!demo && (
+              <button className="link" onClick={recalculateAll} disabled={recalc.busy}>
                 {recalc.busy ? "Recalculating…" : "Recalculate all runs"}
               </button>
             )}

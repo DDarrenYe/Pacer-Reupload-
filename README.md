@@ -8,7 +8,7 @@ Pacer is a running analytics app. Connect Strava or upload a GPX file and see yo
 
 | Run page | Trends and predictions | Race goals |
 |---|---|---|
-| ![Run page with splits and charts](docs/screenshots/run.png) | ![Trends page with race predictions](docs/screenshots/trends.png) | ![Goals page with a half-marathon target, trend chart and suggestions](docs/screenshots/goals.png) |
+| ![Run page with a stat strip, split bars and best efforts](docs/screenshots/run.png) | ![Trends page with headline numbers and a switchable weekly chart](docs/screenshots/trends.png) | ![Goals page showing now, race day and target times with a progress bar](docs/screenshots/goals.png) |
 
 ## Built with
 Python, FastAPI, SQLAlchemy, Alembic, pandas, NumPy, statsmodels, gpxpy · PostgreSQL (Supabase) · React, TypeScript, Vite, Chart.js · pytest, vitest, Playwright, ruff · GitHub Actions, Render, Vercel.

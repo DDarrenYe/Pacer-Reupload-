@@ -147,6 +147,15 @@ Three filters were added, each because a test or seeded data showed the model le
 ### Report honestly when simple wins
 - With 2 runners and 6 test pairs, Riegel's fixed exponent beat both fitted models. I didn't tune the model to win on my own synthetic data, because that would be overfitting to the generator. The app shows the accuracy table to users, and it says "not enough data" below 3 test pairs.
 
+### Cleaner layout (after launch)
+- Mocked up first as a design canvas, then built: borderless white cards on a light grey page, plain text tabs with an underline instead of boxed buttons, and a profile avatar in place of "My Profile" and "Sign out" (both live on the profile page; the demo banner has "leave the demo").
+- Headline numbers sit in **stat strips** (label over a big number, thin dividers) rather than many small bordered tiles.
+- **Runs:** the runner card is one row; the runs table lost its grid for rows with a calendar date and a one-line summary ("Road · even split"). Adding a run is a button, not an always-open section.
+- **Trends:** four headline numbers comparing the last 4 full weeks with the 4 before (the current week is left out so a Monday doesn't look like a collapse), then one chart with a Distance / Elevation / Pace / Predicted 5k switch instead of five small charts, a 12-week / 26-week / 1-year range, and training load as a gauge with its status in words.
+- **Run detail:** splits are bars (longer = faster; fastest blue, slowest orange, also said in text for screen readers) instead of a table plus a pace chart.
+- **Goals:** "Now → race day → target" and a single bar for how much of today's gap your trend closes by race day, instead of a chart first.
+- **Phones:** the tabs move to a bar along the bottom with icons and a Profile tab.
+
 ### Trends charts
 - Weekly distance and weekly elevation gain (bars, starting at zero), average pace and predicted 5k (lines, faster at the top), and ACWR with dashed reference lines at 0.8 and 1.5 named in the caption. One measure per chart, as before. Dense daily series hide their point markers until hovered, and the charts start at the first week with a run.
 - Elevation gain comes from GPS runs: GPX uploads and Strava imports (rebuilt from Strava's altitude stream, so the same climb filter applies to both). Treadmill, manual and CSV runs have none, so a week with only those shows no bar rather than a misleading 0 m.

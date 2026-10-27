@@ -17,31 +17,58 @@ const Rank = lazy(() => import("./pages/Rank"));
 
 const loading = <main><p className="muted">Loading…</p></main>;
 
+// Tab icons, shown on phones where the tabs sit along the bottom of the screen.
+const ICONS = {
+  runs: "M4 6h16M4 12h16M4 18h10",
+  trends: "M4 18l5-6 4 3 7-9",
+  rank: "M5 14l7-5 7 5M5 19l7-5 7 5M5 9l7-5 7 5",
+  goals: "M6 21V4M6 4h11l-2 4 2 4H6",
+  profile: "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21c1.5-4 4.5-6 8-6s6.5 2 8 6",
+};
+
+function Tab({ to, label, icon, end, className = "nav-tab" }: { to: string; label: string; icon: string; end?: boolean; className?: string }) {
+  return (
+    <NavLink to={to} end={end} className={className}>
+      <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d={icon} />
+      </svg>
+      {label}
+    </NavLink>
+  );
+}
+
 function Nav() {
   const { session, demo } = useAuth();
   if (!session && !demo) return null;
+  const email = session?.user.email ?? "";
   return (
     <>
-      <nav className="nav">
+      <nav className="nav" aria-label="Main">
         <Link to="/" className="brand">
+          <img src="/favicon.svg" alt="" width="26" height="26" />
           Pacer
-          <img src="/favicon.svg" alt="" width="28" height="28" />
         </Link>
         <div className="nav-tabs">
-          <NavLink to="/" end className="nav-tab">Runs</NavLink>
-          <NavLink to="/trends" className="nav-tab">Trends</NavLink>
-          <NavLink to="/rank" className="nav-tab">Rank</NavLink>
-          <NavLink to="/goals" className="nav-tab">Goals</NavLink>
+          <Tab to="/" end label="Runs" icon={ICONS.runs} />
+          <Tab to="/trends" label="Trends" icon={ICONS.trends} />
+          <Tab to="/rank" label="Rank" icon={ICONS.rank} />
+          <Tab to="/goals" label="Goals" icon={ICONS.goals} />
+          <Tab to="/account" label="Profile" icon={ICONS.profile} className="nav-tab nav-tab-profile" />
         </div>
-        <Link to="/account" className="nav-profile" title={demo ? undefined : session?.user.email}>
-          {demo ? "Demo" : "My Profile"}
-        </Link>
-        <button className="link" onClick={() => signOut()}>{demo ? "Leave demo" : "Sign out"}</button>
+        <NavLink
+          to="/account"
+          className="nav-avatar"
+          aria-label="My Profile"
+          title={demo ? "My Profile (demo)" : `My Profile (${email})`}
+        >
+          {demo ? "D" : (email[0] ?? "?").toUpperCase()}
+        </NavLink>
       </nav>
       {demo && (
         <p className="demo-banner" role="status">
           You're viewing a demo with sample runs; nothing here can be changed.{" "}
-          <Link to="/login?mode=signup" onClick={() => signOut()}>Sign up</Link> to use your own runs.
+          <Link to="/login?mode=signup" onClick={() => signOut()}>Sign up</Link> to use your own runs, or{" "}
+          <button className="link" onClick={() => signOut()}>leave the demo</button>.
         </p>
       )}
     </>

@@ -43,6 +43,9 @@ interface ChartProps {
   values: (number | null)[];
   /** Formats a value for ticks and tooltips. */
   format: (v: number) => string;
+  /** Inside a card that already names the chart: keep the title for screen readers only,
+   * show just the note, and draw it taller. */
+  bare?: boolean;
 }
 
 interface LineProps extends ChartProps {
@@ -52,20 +55,27 @@ interface LineProps extends ChartProps {
   references?: { value: number; label: string }[];
 }
 
-function Frame({ title, note, children }: { title: string; note?: string; children: React.ReactNode }) {
+function Frame({ title, note, bare, children }: { title: string; note?: string; bare?: boolean; children: React.ReactNode }) {
   return (
     <figure className="chart">
-      <figcaption>
-        {title}
-        {note && <span className="muted"> ({note})</span>}
-      </figcaption>
-      <div className="chart-box">{children}</div>
+      {bare ? (
+        <figcaption className="chart-note">
+          <span className="sr-only">{title}</span>
+          {note && <span className="muted small">{note.charAt(0).toUpperCase() + note.slice(1)}</span>}
+        </figcaption>
+      ) : (
+        <figcaption>
+          {title}
+          {note && <span className="muted"> ({note})</span>}
+        </figcaption>
+      )}
+      <div className={bare ? "chart-box tall" : "chart-box"}>{children}</div>
     </figure>
   );
 }
 
 /** One series per chart: no legend, the title names it. Never two y-axes. */
-export function LineChart({ title, labels, values, format, lowerIsBetter, references = [] }: LineProps) {
+export function LineChart({ title, labels, values, format, lowerIsBetter, references = [], bare }: LineProps) {
   const c = useChartColors();
   const options: ChartOptions<"line"> = {
     responsive: true,
@@ -97,7 +107,7 @@ export function LineChart({ title, labels, values, format, lowerIsBetter, refere
   // Dense daily series: markers only on hover, or the dots swamp the line.
   const dense = values.length > 30;
   return (
-    <Frame title={title} note={note || undefined}>
+    <Frame title={title} note={note || undefined} bare={bare}>
       <Line
         options={options}
         data={{
@@ -129,7 +139,7 @@ export function LineChart({ title, labels, values, format, lowerIsBetter, refere
   );
 }
 
-export function BarChart({ title, note, labels, values, format }: ChartProps & { note?: string }) {
+export function BarChart({ title, note, labels, values, format, bare }: ChartProps & { note?: string }) {
   const c = useChartColors();
   const options: ChartOptions<"bar"> = {
     responsive: true,
@@ -149,7 +159,7 @@ export function BarChart({ title, note, labels, values, format }: ChartProps & {
     },
   };
   return (
-    <Frame title={title} note={note}>
+    <Frame title={title} note={note} bare={bare}>
       <Bar
         options={options}
         data={{

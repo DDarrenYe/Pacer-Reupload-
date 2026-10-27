@@ -5,7 +5,8 @@ import { api } from "../api";
 import { useAuth } from "../auth";
 import { LineChart } from "../components/charts";
 import GoalForm, { goalDistanceLabel } from "../components/GoalForm";
-import { describeCountdown, describeGap, formatDate, formatDuration, formatPace, formatShortDate } from "../format";
+import { describeCountdown, describeGap, formatDuration, formatPace, formatShortDate } from "../format";
+import { goalProgress } from "../goalProgress";
 import type { Goal, GoalAnalysis } from "../types";
 import { useSlowNotice } from "../useSlowNotice";
 import { useTitle } from "../useTitle";
@@ -18,8 +19,6 @@ const STATUS_LABELS: Record<GoalAnalysis["status"], string> = {
   stretch: "Stretch",
   passed: "Race day passed",
 };
-
-const versusTarget = (gap: number) => (Math.abs(gap) < 1 ? "right on target" : `${describeGap(gap)} than target`);
 
 function statusSentence(a: GoalAnalysis): string {
   switch (a.status) {
@@ -43,6 +42,7 @@ function GoalCard({ goal, demo, onChanged }: { goal: Goal; demo: boolean; onChan
   const [editing, setEditing] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showTrend, setShowTrend] = useState(false);
   const a = goal.analysis;
   const target = goal.target_time_s;
 
@@ -69,63 +69,108 @@ function GoalCard({ goal, demo, onChanged }: { goal: Goal; demo: boolean; onChan
 
   const distance = goalDistanceLabel(goal.distance_m / 1000);
   const chartPoints = a.weekly.filter((w) => w.predicted_s !== null);
+  const raceDay = new Date(`${goal.race_date}T00:00:00`).toLocaleDateString(undefined, {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+  const progress = a.now_s !== null ? goalProgress(a.now_s, a.projected_s, target) : null;
+
   return (
-    <section className="card stack" aria-labelledby={`goal-${goal.id}`}>
+    <section className="card stack goal-card" aria-labelledby={`goal-${goal.id}`}>
       <div className="goal-header">
         <div>
           <h2 id={`goal-${goal.id}`}>{goal.name}</h2>
-          <p className="muted">
-            {distance} on {formatDate(`${goal.race_date}T00:00:00`)}, {describeCountdown(a.days_left)}
-          </p>
+          <p className="muted">{distance} · {raceDay} · {describeCountdown(a.days_left)}</p>
         </div>
-        <span className={`status status-${a.status}`}>{STATUS_LABELS[a.status]}</span>
+        <span className={`badge ${STATUS_TONE[a.status === "passed" && a.result_hit ? "on_track" : a.status]}`}>
+          {STATUS_LABELS[a.status]}
+        </span>
       </div>
 
-      <div className="tiles goal-tiles">
-        <div className="tile">
-          <div className="tile-label">Target</div>
-          <div className="tile-value">{formatDuration(target)}</div>
-          <div className="tile-note">{formatPace(a.target_pace_s_per_km)}</div>
+      {a.status === "passed" ? (
+        <div className="goal-flow">
+          <FlowValue label="Target" value={formatDuration(target)} />
+          <Arrow />
+          <FlowValue
+            label="Result"
+            value={a.result_s === null ? "–" : formatDuration(a.result_s)}
+            note={a.result_s === null ? undefined : describeGap(a.result_s - target)}
+            accent
+          />
         </div>
-        {a.status === "passed" ? (
-          <div className="tile">
-            <div className="tile-label">Result</div>
-            <div className="tile-value">{a.result_s === null ? "–" : formatDuration(a.result_s)}</div>
-            {a.result_s !== null && <div className="tile-note">{describeGap(a.result_s - target)}</div>}
+      ) : a.now_s !== null && progress ? (
+        <>
+          <div className="goal-flow">
+            <FlowValue label="Now" value={formatDuration(a.now_s)} />
+            <Arrow />
+            <FlowValue
+              label={a.projection_basis === "current" ? "Race day (if fitness holds)" : "Race day (at your current rate)"}
+              value={a.projected_s === null ? "–" : formatDuration(a.projected_s)}
+              accent
+            />
+            <Arrow />
+            <FlowValue label="Target" value={formatDuration(target)} note={formatPace(a.target_pace_s_per_km)} />
           </div>
-        ) : (
-          <>
-            <div className="tile">
-              <div className="tile-label">Predicted now</div>
-              <div className="tile-value">{a.now_s === null ? "–" : formatDuration(a.now_s)}</div>
-              {a.now_s !== null && <div className="tile-note">{versusTarget(a.now_s - target)}</div>}
+          <div className="goal-progress">
+            <div className="goal-progress-head">
+              <strong>{progress.headline}</strong>
+              <span className="muted">{progress.left}</span>
             </div>
-            <div className="tile">
-              <div className="tile-label">Projected on race day</div>
-              <div className="tile-value">{a.projected_s === null ? "–" : formatDuration(a.projected_s)}</div>
-              {a.projected_s !== null && (
-                <div className="tile-note">
-                  {versusTarget(a.projected_s - target)}
-                  {a.projection_basis === "current" && ", if fitness holds"}
-                </div>
+            <div
+              className="progress"
+              role="progressbar"
+              aria-label="Share of the gap to your target closed by race day"
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={progress.pct}
+            >
+              <div style={{ width: `${Math.max(progress.pct, 2)}%` }} />
+            </div>
+            <p className="muted small">
+              {a.now_s > target ? `You're ${formatDuration(a.now_s - target)} off your target today. ` : ""}
+              {statusSentence(a)}
+            </p>
+          </div>
+        </>
+      ) : (
+        <p style={{ margin: 0 }}>{statusSentence(a)}</p>
+      )}
+      {a.status === "passed" && <p style={{ margin: 0 }}>{statusSentence(a)}</p>}
+
+      {a.status !== "passed" && (a.recommendations.length > 0 || a.equivalents.length > 0) && (
+        <div className="two-col goal-extras">
+          {a.recommendations.length > 0 && (
+            <div className="inset stack">
+              <h3>This week's focus</h3>
+              <ul className="focus-list">
+                {a.recommendations.map((r) => <li key={r}>{r}</li>)}
+              </ul>
+            </div>
+          )}
+          {a.equivalents.length > 0 && (
+            <div className="inset stack">
+              <h3>Same fitness at other distances</h3>
+              <div className="actions">
+                {a.equivalents.map((e) => (
+                  <div key={e.name} className="equiv">
+                    <span className="tile-label">{e.name}</span>
+                    <span className="effort-time">{formatDuration(e.time_s)}</span>
+                  </div>
+                ))}
+              </div>
+              {chartPoints.length > 1 && (
+                <button className="link" style={{ justifySelf: "start" }} aria-expanded={showTrend} onClick={() => setShowTrend((v) => !v)}>
+                  {showTrend ? "Hide the trend ▴" : `See the ${chartPoints.length}-week trend ▾`}
+                </button>
               )}
             </div>
-          </>
-        )}
-      </div>
-
-      <p className="goal-verdict">
-        <strong>{STATUS_LABELS[a.status]}.</strong> {statusSentence(a)}
-      </p>
-
-      {(a.anchor || a.projection_note) && (
-        <ul className="facts">
-          {a.anchor && <li>The prediction starts from {a.anchor}.</li>}
-          {a.projection_note && <li>{a.projection_note}</li>}
-        </ul>
+          )}
+        </div>
       )}
 
-      {chartPoints.length > 1 && (
+      {showTrend && chartPoints.length > 1 && (
         <LineChart
           title={`Predicted ${distance.toLowerCase()} time`}
           labels={chartPoints.map((w) => formatShortDate(w.week_end))}
@@ -136,20 +181,11 @@ function GoalCard({ goal, demo, onChanged }: { goal: Goal; demo: boolean; onChan
         />
       )}
 
-      {a.equivalents.length > 0 && a.status !== "passed" && (
-        <p className="muted goal-verdict">
-          Checkpoints at the same fitness:{" "}
-          {a.equivalents.map((e) => `${e.name} in ${formatDuration(e.time_s)}`).join(", ")}.
+      {(a.anchor || a.projection_note) && a.status !== "passed" && (
+        <p className="muted small">
+          {a.anchor && <>Predictions start from {a.anchor}. </>}
+          {a.projection_note}
         </p>
-      )}
-
-      {a.recommendations.length > 0 && (
-        <>
-          <h3 className="goal-subhead">What to do</h3>
-          <ol className="steps">
-            {a.recommendations.map((r) => <li key={r}>{r}</li>)}
-          </ol>
-        </>
       )}
 
       {error && <p className="error" role="alert">{error}</p>}
@@ -160,6 +196,33 @@ function GoalCard({ goal, demo, onChanged }: { goal: Goal; demo: boolean; onChan
         </div>
       )}
     </section>
+  );
+}
+
+const STATUS_TONE: Record<GoalAnalysis["status"], string> = {
+  no_data: "",
+  already_there: "good",
+  on_track: "good",
+  within_reach: "",
+  stretch: "warn",
+  passed: "warn",
+};
+
+function FlowValue({ label, value, note, accent }: { label: string; value: string; note?: string; accent?: boolean }) {
+  return (
+    <div className="flow-value">
+      <span className="tile-label">{label}</span>
+      <span className={accent ? "flow-number accent" : "flow-number"}>{value}</span>
+      {note && <span className="muted small">{note}</span>}
+    </div>
+  );
+}
+
+function Arrow() {
+  return (
+    <svg className="flow-arrow" width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M5 12h14M13 6l6 6-6 6" />
+    </svg>
   );
 }
 
@@ -183,7 +246,7 @@ export default function Goals() {
       <div className="page-header">
         <h1>Goals</h1>
         {!demo && goals && goals.length > 0 && !adding && (
-          <button onClick={() => setAdding(true)}>Add a goal</button>
+          <button onClick={() => setAdding(true)}>+ New goal</button>
         )}
       </div>
       {error && <p className="error">{error}</p>}
